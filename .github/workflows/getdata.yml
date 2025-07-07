@@ -22,12 +22,12 @@ jobs:
         run: pip install requests
 
       - name: Run download script
-        run: python scripts/download_data.py
+        run: python scripts/getdata.py
 
       - name: Commit downloaded data
         run: |
           git config --global user.name 'therepos'
           git config --global user.email 'therepos@github.com'
-          git add data/sg_toto.csv
+          git add data/sgtoto.csv
           git commit -m "Update lottery data [skip ci]" || echo "No changes"
           git push
