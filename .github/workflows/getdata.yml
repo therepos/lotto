@@ -1,17 +1,16 @@
-name: Download Lottery Data
+name: Update Lottery Data
 
 on:
   schedule:
-    - cron: '0 0 * * 0'  # Every Sunday at midnight
+    - cron: '0 0 * * 0'
   workflow_dispatch:
 
 jobs:
-  download:
+  update:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -19,15 +18,15 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install -r requirements.txt
 
-      - name: Run download script
+      - name: Run update script
         run: python scripts/getdata.py
 
-      - name: Commit downloaded data
+      - name: Commit updates
         run: |
-          git config --global user.name 'therepos'
-          git config --global user.email 'therepos@github.com'
+          git config user.name github-actions
+          git config user.email github-actions@github.com
           git add data/sgtoto.csv
-          git commit -m "Update lottery data [skip ci]" || echo "No changes"
+          git commit -m "Auto update lottery results" || echo "No changes to commit"
           git push
