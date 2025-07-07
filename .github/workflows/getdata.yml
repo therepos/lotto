@@ -24,7 +24,7 @@ jobs:
         run: python scripts/getdata.py
 
       - name: Run analysis
-        run: python scripts/analyze_duplicates.py
+        run: python scripts/analyzeduplicates.py
 
       - name: Commit updates
         run: |
