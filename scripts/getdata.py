@@ -2,7 +2,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-URL = "https://en.lottolyzer.com/history/singapore/toto"
+URL = "https://en.lottolyzer.com/history/singapore/toto#download"
 DATA_PATH = "data/sgtoto.csv"
 
 # Load existing CSV data
