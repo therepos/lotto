@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 DATA_PATH = "data/sgtoto.csv"
-REPORT_PATH = "reports/duplicate_check.md"
+REPORT_PATH = "reports/checkduplicate.md"
 
 # Load data
 df = pd.read_csv(DATA_PATH)
