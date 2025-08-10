@@ -3,7 +3,11 @@ import importlib
 import pkgutil
 from datetime import datetime
 import pandas as pd
-
+import sys, os, pathlib
+repo_root = pathlib.Path(__file__).resolve().parents[1]
+if str(repo_root) not in sys.path:
+    sys.path.insert(0, str(repo_root))
+    
 DATA_PATH = "data/sgtoto.csv"
 OUTPUT_PATH = "docs/index.md"
 ANALYSES_PKG = "analyses"
