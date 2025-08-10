@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 URL = "https://en.lottolyzer.com/history/singapore/toto"
-DATA_PATH = "data/sgtoto.csv"
+DATA_PATH = "docs/assets/sgtoto.csv"
 COLUMNS = ["Date", "Num1", "Num2", "Num3", "Num4", "Num5", "Num6", "Addl"]
 
 # Load existing data (8-column schema)

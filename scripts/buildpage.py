@@ -8,7 +8,7 @@ repo_root = pathlib.Path(__file__).resolve().parents[1]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
     
-DATA_PATH = "data/sgtoto.csv"
+DATA_PATH = "docs/assets/sgtoto.csv"
 OUTPUT_PATH = "docs/index.md"
 ANALYSES_PKG = "analyses"
 
@@ -39,7 +39,7 @@ def buildpage(df, modules):
         "",
         f"_Last updated: **{ts}**_",
         "",
-        f"[Download data (CSV)](../data/sgtoto.csv)",
+        f"[Download data (CSV)](./assets/sgtoto.csv)",
         "",
         "## Table of Contents",
     ]
