@@ -1,4 +1,4 @@
-name: Update data and publish page
+name: Publish
 
 on:
   push:
