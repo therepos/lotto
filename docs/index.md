@@ -1,6 +1,6 @@
 # Lotto Analyses
 
-_Last updated: **2026-01-02 12:40 UTC**_
+_Last updated: **2026-01-02 18:29 UTC**_
 
 [Download data (CSV)](./assets/sgtoto.csv)
 
@@ -29,9 +29,9 @@ Enter six numbers (1–49). Order doesn’t matter.
 
 ## Duplicate Check of Latest Draw
 
-**Latest Draw:** 2025-12-29
+**Latest Draw:** 2026-01-02
 
-**Numbers:** `[np.int64(2), np.int64(4), np.int64(22), np.int64(24), np.int64(30), np.int64(33)]`
+**Numbers:** `[np.int64(11), np.int64(18), np.int64(20), np.int64(32), np.int64(38), np.int64(39)]`
 
 ✅ No exact match found in historical records.
 
@@ -46,16 +46,16 @@ Enter six numbers (1–49). Order doesn’t matter.
 | 42 | 16 |
 | 10 | 15 |
 | 34 | 15 |
+| 38 | 15 |
 | 43 | 15 |
 | 17 | 14 |
 | 24 | 14 |
 | 31 | 14 |
 | 35 | 14 |
 | 37 | 14 |
-| 38 | 14 |
 | 8 | 13 |
 | 49 | 13 |
+| 39 | 12 |
 | 40 | 12 |
 | 46 | 12 |
 | 3 | 11 |
-| 5 | 11 |
