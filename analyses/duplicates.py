@@ -10,7 +10,7 @@ def generate(df: pd.DataFrame) -> str:
 
     # Get latest draw
     latest = df.iloc[0]
-    latest_numbers = sorted([latest[f"Num{i}"] for i in range(1, 7)])
+    latest_numbers = sorted(int(latest[f"Num{i}"]) for i in range(1, 7))
     latest_date = latest["Date"]
 
     # Check for matches
