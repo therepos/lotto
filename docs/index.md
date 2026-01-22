@@ -1,6 +1,6 @@
 # Lotto Analyses
 
-_Last updated: **2026-01-22 06:34 UTC**_
+_Last updated: **2026-01-22 12:49 UTC**_
 
 [Download data (CSV)](./assets/sgtoto.csv)
 
@@ -29,9 +29,9 @@ Enter six numbers (1–49). Order doesn’t matter.
 
 ## Duplicate Check of Latest Draw
 
-**Latest Draw:** 2026-01-19
+**Latest Draw:** 2026-01-22
 
-**Numbers:** `[4, 11, 21, 23, 31, 35]`
+**Numbers:** `[6, 22, 27, 32, 37, 44]`
 
 ✅ No exact match found in historical records.
 
@@ -40,8 +40,8 @@ Enter six numbers (1–49). Order doesn’t matter.
 | Number | Count |
 |---:|---:|
 | 15 | 18 |
+| 22 | 18 |
 | 35 | 18 |
-| 22 | 17 |
 | 2 | 16 |
 | 19 | 16 |
 | 34 | 16 |
@@ -50,12 +50,12 @@ Enter six numbers (1–49). Order doesn’t matter.
 | 10 | 15 |
 | 17 | 15 |
 | 31 | 15 |
+| 37 | 15 |
 | 38 | 15 |
 | 24 | 14 |
-| 37 | 14 |
 | 49 | 14 |
 | 8 | 13 |
 | 16 | 13 |
+| 32 | 13 |
 | 39 | 13 |
 | 40 | 13 |
-| 3 | 12 |
