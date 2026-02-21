@@ -34,7 +34,7 @@ HTML_TEMPLATE = """\
     body {{
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                    Helvetica, Arial, sans-serif;
-      max-width: 960px;
+      max-width: 800px;
       margin: 2rem auto;
       padding: 0 1rem;
       line-height: 1.6;
@@ -111,7 +111,7 @@ def discover_analyses():
 def buildpage(df, modules):
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    # Build markdown content — no Table of Contents
+    # Build markdown content
     md_parts = [
         "# Lotto Analyses",
         "",
@@ -119,7 +119,12 @@ def buildpage(df, modules):
         "",
         "[Download data (CSV)](data/sgtoto.csv)",
         "",
+        "## Table of Contents",
     ]
+    for _, title, _ in modules:
+        anchor = title.lower().replace(" ", "-")
+        md_parts.append(f"- [{title}](#{anchor})")
+    md_parts.append("")
 
     for _, _, gen in modules:
         try:
@@ -129,7 +134,7 @@ def buildpage(df, modules):
 
     md_text = "\n".join(md_parts)
 
-    # Convert markdown to HTML, preserving raw HTML blocks
+    # Convert markdown to HTML, preserving raw HTML blocks (like the lookup form)
     body_html = markdown.markdown(
         md_text,
         extensions=["tables", "toc"],

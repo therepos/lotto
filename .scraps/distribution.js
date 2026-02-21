@@ -1,17 +1,18 @@
 (async function () {
   // ── User-configurable colors ─────────────────────────
-  const MAIN_COLOR   = '#3b82f6';
-  const ADDL_COLOR   = '#ef4444';
-  const EMPTY_COLOR  = '#ffffff';
-  const LOW_COLOR    = '#dbeafe';
-  const HIGH_COLOR   = '#1e3a8a';
-  const HIGHLIGHT_BG = '#fffde7';
+  const MAIN_COLOR   = '#3b82f6';   // blue — main number dot
+  const ADDL_COLOR   = '#ef4444';   // red — additional number dot
+  const EMPTY_COLOR  = '#ffffff';   // white — not drawn
+  const LOW_COLOR    = '#dbeafe';   // light blue — 1 hit (week/month)
+  const HIGH_COLOR   = '#1e3a8a';   // dark blue — max hits (week/month)
+  const BORDER_COLOR = '#e5e7eb';   // light grey — cell borders
   // ─────────────────────────────────────────────────────
 
   const csvUrl = 'data/sgtoto.csv';
   const NUM_MIN = 1;
   const NUM_MAX = 49;
 
+  // Parse CSV
   function parseCSV(text) {
     const lines = text.trim().split('\n');
     lines.shift();
@@ -25,22 +26,31 @@
     }).filter(r => r.main.every(n => !isNaN(n)) && !isNaN(r.addl));
   }
 
-  // Week label: "2026 Feb 16"
+  // Group helpers
   function weekKey(dateStr) {
     const d = new Date(dateStr);
+    const thu = new Date(d);
+    thu.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 3);
+    const jan4 = new Date(thu.getFullYear(), 0, 4);
+    const weekNum = Math.ceil(((thu - jan4) / 86400000 + jan4.getDay() + 1) / 7);
     const wStart = new Date(d);
     wStart.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    const months = ['Jan','Feb','Mar','Apr','May','Jun',
-                    'Jul','Aug','Sep','Oct','Nov','Dec'];
-    return `${wStart.getFullYear()} ${months[wStart.getMonth()]} ${wStart.getDate()}`;
+    const wEnd = new Date(wStart);
+    wEnd.setDate(wStart.getDate() + 6);
+    const fmt = dt => {
+      const mm = String(dt.getMonth() + 1).padStart(2, '0');
+      const dd = String(dt.getDate()).padStart(2, '0');
+      return `${mm}-${dd}`;
+    };
+    const yr = wStart.getFullYear().toString().slice(-2);
+    return `${fmt(wStart)} to ${fmt(wEnd)} '${yr}`;
   }
 
-  // Month label: "2026 Feb"
   function monthKey(dateStr) {
     const d = new Date(dateStr);
     const months = ['Jan','Feb','Mar','Apr','May','Jun',
                     'Jul','Aug','Sep','Oct','Nov','Dec'];
-    return `${d.getFullYear()} ${months[d.getMonth()]}`;
+    return `${months[d.getMonth()]} ${d.getFullYear()}`;
   }
 
   function dateSortVal(dateStr) {
@@ -65,12 +75,12 @@
     return [...groups.values()].sort((a, b) => b.sortVal - a.sortVal);
   }
 
+  // Color interpolation for heatmap
   function hexToRgb(hex) {
-    return [
-      parseInt(hex.slice(1, 3), 16),
-      parseInt(hex.slice(3, 5), 16),
-      parseInt(hex.slice(5, 7), 16)
-    ];
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return [r, g, b];
   }
 
   function interpolateColor(low, high, t) {
@@ -90,20 +100,17 @@
     thead.innerHTML = hrow;
 
     let html = '';
-    for (let i = 0; i < draws.length; i++) {
-      const draw = draws[i];
-      const cls = i === 0 ? ' class="latest-row"' : '';
-      html += `<tr${cls}><td class="row-label">${draw.date}</td>`;
+    for (const draw of draws) {
+      html += `<tr><td class="row-label">${draw.date}</td>`;
       for (let n = NUM_MIN; n <= NUM_MAX; n++) {
         const isMain = draw.main.includes(n);
         const isAddl = draw.addl === n;
-        const bg = i === 0 ? HIGHLIGHT_BG : EMPTY_COLOR;
         if (isMain) {
-          html += `<td style="background:${bg}"><span class="dot" style="background:${MAIN_COLOR}"></span></td>`;
+          html += `<td style="background:${EMPTY_COLOR}"><span class="dot" style="background:${MAIN_COLOR}"></span></td>`;
         } else if (isAddl) {
-          html += `<td style="background:${bg}"><span class="dot" style="background:${ADDL_COLOR}"></span></td>`;
+          html += `<td style="background:${EMPTY_COLOR}"><span class="dot" style="background:${ADDL_COLOR}"></span></td>`;
         } else {
-          html += `<td style="background:${bg}"></td>`;
+          html += `<td style="background:${EMPTY_COLOR}"></td>`;
         }
       }
       html += '</tr>';
@@ -127,17 +134,14 @@
     thead.innerHTML = hrow;
 
     let html = '';
-    for (let i = 0; i < groups.length; i++) {
-      const g = groups[i];
-      const cls = i === 0 ? ' class="latest-row"' : '';
-      html += `<tr${cls}><td class="row-label">${g.label}</td>`;
+    for (const g of groups) {
+      html += `<tr><td class="row-label">${g.label}</td>`;
       for (let n = NUM_MIN; n <= NUM_MAX; n++) {
         const mc = g.main[n] || 0;
         const ac = g.addl[n] || 0;
         const total = mc + ac;
         if (total === 0) {
-          const bg = i === 0 ? HIGHLIGHT_BG : EMPTY_COLOR;
-          html += `<td style="background:${bg}"></td>`;
+          html += `<td style="background:${EMPTY_COLOR}"></td>`;
         } else {
           const t = Math.min(total / maxCount, 1);
           const bg = interpolateColor(LOW_COLOR, HIGH_COLOR, t);
@@ -148,6 +152,7 @@
     }
     tbody.innerHTML = html;
 
+    // Tooltip handling
     tbody.addEventListener('mouseover', e => {
       const el = e.target.closest('.heat-cell');
       if (!el || !el.dataset.tip) { tooltip.style.display = 'none'; return; }
@@ -171,27 +176,19 @@
 
     const thead = document.querySelector('#dist-table thead');
     const tooltip = document.getElementById('dist-tooltip');
-    const modeButtons = document.querySelectorAll('#dist-controls button');
-    const viewButtons = document.querySelectorAll('#dist-view-toggle button');
-    const tableWrap = document.getElementById('dist-table-wrap');
+    const buttons = document.querySelectorAll('#dist-controls button');
 
     let currentMode = 'draw';
-    let currentView = 'compact';
 
     function render() {
       tooltip.style.display = 'none';
 
-      // Toggle compact/table class
-      if (currentView === 'compact') {
-        tableWrap.classList.add('compact-mode');
-      } else {
-        tableWrap.classList.remove('compact-mode');
-      }
-
+      // ── FIX: always get the current tbody from the live DOM ──
       const oldTbody = document.querySelector('#dist-table tbody');
       const newTbody = oldTbody.cloneNode(false);
       oldTbody.parentNode.replaceChild(newTbody, oldTbody);
       const tb = document.querySelector('#dist-table tbody');
+      // ─────────────────────────────────────────────────────────
 
       if (currentMode === 'draw') {
         renderDraw(draws, thead, tb);
@@ -204,20 +201,11 @@
       }
     }
 
-    modeButtons.forEach(btn => {
+    buttons.forEach(btn => {
       btn.addEventListener('click', () => {
-        modeButtons.forEach(b => b.classList.remove('active'));
+        buttons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentMode = btn.dataset.mode;
-        render();
-      });
-    });
-
-    viewButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        viewButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentView = btn.dataset.view;
         render();
       });
     });
