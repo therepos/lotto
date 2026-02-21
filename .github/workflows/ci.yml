@@ -41,7 +41,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas requests beautifulsoup4
+          pip install pandas requests beautifulsoup4 markdown
 
       - name: Fetch data
         run: python scripts/getdata.py

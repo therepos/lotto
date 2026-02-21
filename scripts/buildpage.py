@@ -2,8 +2,9 @@ import os
 import shutil
 import importlib
 import pkgutil
-from datetime import datetime
+from datetime import datetime, timezone
 import pandas as pd
+import markdown
 import sys, pathlib
 
 repo_root = pathlib.Path(__file__).resolve().parents[1]
@@ -12,7 +13,7 @@ if str(repo_root) not in sys.path:
 
 DATA_PATH = "static/data/sgtoto.csv"
 OUTPUT_DIR = "_site"
-OUTPUT_PATH = os.path.join(OUTPUT_DIR, "index.md")
+OUTPUT_PATH = os.path.join(OUTPUT_DIR, "index.html")
 ANALYSES_PKG = "src.analysis"
 
 # Assets to copy into _site/ for the deployed site
@@ -20,6 +21,60 @@ ASSETS = {
     "static/data/sgtoto.csv": os.path.join(OUTPUT_DIR, "data", "sgtoto.csv"),
     "src/analysis/lookup.js": os.path.join(OUTPUT_DIR, "js", "lookup.js"),
 }
+
+HTML_TEMPLATE = """\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotto Analyses</title>
+  <style>
+    body {{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   Helvetica, Arial, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      line-height: 1.6;
+      color: #24292e;
+    }}
+    table {{
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }}
+    th, td {{
+      border: 1px solid #ddd;
+      padding: 6px 12px;
+      text-align: right;
+    }}
+    th {{
+      background: #f6f8fa;
+    }}
+    a {{
+      color: #0366d6;
+    }}
+    code {{
+      background: #f6f8fa;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }}
+    input[type="number"] {{
+      width: 4rem;
+      padding: 4px;
+      margin: 2px;
+    }}
+    button {{
+      padding: 6px 16px;
+      cursor: pointer;
+    }}
+  </style>
+</head>
+<body>
+{body}
+</body>
+</html>
+"""
 
 
 def copy_assets():
@@ -53,8 +108,10 @@ def discover_analyses():
 
 
 def buildpage(df, modules):
-    ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
-    header = [
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+    # Build markdown content
+    md_parts = [
         "# Lotto Analyses",
         "",
         f"_Last updated: **{ts}**_",
@@ -65,19 +122,28 @@ def buildpage(df, modules):
     ]
     for _, title, _ in modules:
         anchor = title.lower().replace(" ", "-")
-        header.append(f"- [{title}](#{anchor})")
-    header.append("")
+        md_parts.append(f"- [{title}](#{anchor})")
+    md_parts.append("")
 
-    sections = []
     for _, _, gen in modules:
         try:
-            sections.append(gen(df))
+            md_parts.append(gen(df))
         except Exception as e:
-            sections.append(f"## Error\nCould not render this section: `{e}`\n")
+            md_parts.append(f"## Error\nCould not render this section: `{e}`\n")
+
+    md_text = "\n".join(md_parts)
+
+    # Convert markdown to HTML, preserving raw HTML blocks (like the lookup form)
+    body_html = markdown.markdown(
+        md_text,
+        extensions=["tables", "toc"],
+    )
+
+    html = HTML_TEMPLATE.format(body=body_html)
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
-        f.write("\n".join(header + sections))
+        f.write(html)
     print(f"Wrote {OUTPUT_PATH} with {len(modules)} section(s).")
 
 
