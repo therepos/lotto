@@ -20,6 +20,9 @@ ANALYSES_PKG = "src.analysis"
 ASSETS = {
     "static/data/sgtoto.csv": os.path.join(OUTPUT_DIR, "data", "sgtoto.csv"),
     "src/analysis/lookup.js": os.path.join(OUTPUT_DIR, "js", "lookup.js"),
+    "static/data/sgtoto.csv": os.path.join(OUTPUT_DIR, "data", "sgtoto.csv"),
+    "src/analysis/lookup.js": os.path.join(OUTPUT_DIR, "js", "lookup.js"),
+    "src/analysis/distribution.js": os.path.join(OUTPUT_DIR, "js", "distribution.js"),
 }
 
 HTML_TEMPLATE = """\
