@@ -4,9 +4,9 @@ on:
   push:
     branches: [ main ]          # or your default branch
     paths:
-      - 'analyses/**'
+      - 'app/**'
       - 'scripts/**'
-      - 'docs/**'
+      - 'src/**'
       - 'requirements.txt'
   schedule:
     - cron: "0 */6 * * *"   # every 6 hours
