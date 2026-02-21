@@ -2,22 +2,31 @@ name: Publish
 
 on:
   push:
-    branches: [ main ]          # or your default branch
+    branches: [ main ]
     paths:
-      - 'docs/**'
       - 'scripts/**'
       - 'src/**'
+      - 'static/**'
       - 'requirements.txt'
   schedule:
-    - cron: "0 */6 * * *"   # every 6 hours
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 permissions:
-  contents: write    # push back to the repo
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,17 +46,29 @@ jobs:
       - name: Fetch data
         run: python scripts/getdata.py
 
-      - name: Build docs/index.md
+      - name: Build site into _site/
         run: python scripts/buildpage.py
 
-      - name: Commit & push changes
+      - name: Commit updated data
         run: |
           git config user.name "therepos"
           git config user.email "therepos@users.noreply.github.com"
-          if ! git diff --quiet; then
-            git add -A
-            git commit -m "chore(pages): refresh one-pager"
+          if ! git diff --quiet -- static/data/; then
+            git add static/data/
+            git commit -m "chore(data): update lottery data"
             git push
           else
-            echo "No changes."
+            echo "No data changes."
           fi
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

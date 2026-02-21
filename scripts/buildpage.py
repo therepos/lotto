@@ -1,21 +1,40 @@
 import os
+import shutil
 import importlib
 import pkgutil
 from datetime import datetime
 import pandas as pd
-import sys, os, pathlib
+import sys, pathlib
+
 repo_root = pathlib.Path(__file__).resolve().parents[1]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
-    
+
 DATA_PATH = "static/data/sgtoto.csv"
-OUTPUT_PATH = "docs/index.md"
+OUTPUT_DIR = "_site"
+OUTPUT_PATH = os.path.join(OUTPUT_DIR, "index.md")
 ANALYSES_PKG = "src.analysis"
+
+# Assets to copy into _site/ for the deployed site
+ASSETS = {
+    "static/data/sgtoto.csv": os.path.join(OUTPUT_DIR, "data", "sgtoto.csv"),
+    "src/analysis/lookup.js": os.path.join(OUTPUT_DIR, "js", "lookup.js"),
+}
+
+
+def copy_assets():
+    for src, dst in ASSETS.items():
+        if os.path.exists(src):
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            shutil.copy2(src, dst)
+            print(f"Copied {src} → {dst}")
+
 
 def load_dataframe(path):
     df = pd.read_csv(path)
     df.columns = df.columns.str.strip()
     return df
+
 
 def discover_analyses():
     pkg = importlib.import_module(ANALYSES_PKG)
@@ -32,6 +51,7 @@ def discover_analyses():
     modules.sort(key=lambda x: (x[0], x[1].lower()))
     return modules
 
+
 def buildpage(df, modules):
     ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
     header = [
@@ -39,7 +59,7 @@ def buildpage(df, modules):
         "",
         f"_Last updated: **{ts}**_",
         "",
-        f"[Download data (CSV)](/data/sgtoto.csv)",
+        "[Download data (CSV)](data/sgtoto.csv)",
         "",
         "## Table of Contents",
     ]
@@ -55,12 +75,14 @@ def buildpage(df, modules):
         except Exception as e:
             sections.append(f"## Error\nCould not render this section: `{e}`\n")
 
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         f.write("\n".join(header + sections))
     print(f"Wrote {OUTPUT_PATH} with {len(modules)} section(s).")
 
+
 if __name__ == "__main__":
+    copy_assets()
     df = load_dataframe(DATA_PATH)
     mods = discover_analyses()
     buildpage(df, mods)

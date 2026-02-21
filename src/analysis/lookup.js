@@ -1,16 +1,14 @@
 (async function () {
-  const csvUrl = '/static/data/sgtoto.csv';
+  const csvUrl = 'data/sgtoto.csv';
 
   function parseCSV(text) {
-    // Simple CSV split (your file has no embedded commas/quotes in numbers/dates)
     const lines = text.trim().split('\n');
-    const header = lines.shift(); // Date,Num1,...,Addl
+    const header = lines.shift();
     const rows = lines.map(line => line.split(','));
     return rows;
   }
 
   function buildIndex(rows) {
-    // Map "n1-n2-n3-n4-n5-n6" => [dates...]
     const map = new Map();
     for (const cols of rows) {
       const date = cols[0];
@@ -40,7 +38,6 @@
     document.getElementById('lookup-result').textContent = msg;
   }
 
-  // Load and index CSV once
   try {
     const res = await fetch(csvUrl, { cache: 'no-store' });
     const txt = await res.text();
@@ -59,6 +56,5 @@
     });
   } catch (e) {
     setMsg('Failed to load data for lookup. Try refreshing.');
-    // Optional: console.error(e);
   }
 })();

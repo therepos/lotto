@@ -3,10 +3,11 @@ ORDER = 5
 
 def generate(df):
     # We return raw HTML + a script tag. GitHub Pages renders raw HTML in Markdown.
+    # Paths are relative — js/ and data/ are siblings of index.md in _site/.
     return """
 ## Check Your Combination (Interactive)
 
-Enter six numbers (1–49). Order doesn’t matter.
+Enter six numbers (1–49). Order doesn't matter.
 
 <div id="combo-lookup" style="margin: 1rem 0;">
   <input id="n1" type="number" min="1" max="49" style="width:4rem;"> 
@@ -19,5 +20,5 @@ Enter six numbers (1–49). Order doesn’t matter.
   <div id="lookup-result" style="margin-top:0.5rem;font-weight:600;"></div>
 </div>
 
-<script src="/src/analysis/lookup.js"></script>
+<script src="js/lookup.js"></script>
 """
