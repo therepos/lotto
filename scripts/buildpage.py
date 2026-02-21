@@ -8,9 +8,9 @@ repo_root = pathlib.Path(__file__).resolve().parents[1]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
     
-DATA_PATH = "docs/assets/sgtoto.csv"
-OUTPUT_PATH = "docs/index.md"
-ANALYSES_PKG = "analyses"
+DATA_PATH = "static/data/sgtoto.csv"
+OUTPUT_PATH = "app/index.md"
+ANALYSES_PKG = "scripts"
 
 def load_dataframe(path):
     df = pd.read_csv(path)
