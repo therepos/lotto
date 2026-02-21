@@ -29,12 +29,10 @@
   // Group helpers
   function weekKey(dateStr) {
     const d = new Date(dateStr);
-    // ISO week: find Thursday of that week
     const thu = new Date(d);
     thu.setDate(d.getDate() - ((d.getDay() + 6) % 7) + 3);
     const jan4 = new Date(thu.getFullYear(), 0, 4);
     const weekNum = Math.ceil(((thu - jan4) / 86400000 + jan4.getDay() + 1) / 7);
-    // Return label: "Wk {weekNum} '{YY}"
     const wStart = new Date(d);
     wStart.setDate(d.getDate() - ((d.getDay() + 6) % 7));
     const wEnd = new Date(wStart);
@@ -55,12 +53,10 @@
     return `${months[d.getMonth()]} ${d.getFullYear()}`;
   }
 
-  // Sort key for chronological ordering (newest first)
   function dateSortVal(dateStr) {
     return new Date(dateStr).getTime();
   }
 
-  // Aggregate draws into groups
   function groupDraws(draws, keyFn) {
     const groups = new Map();
     for (const draw of draws) {
@@ -69,7 +65,6 @@
         groups.set(key, { label: key, sortVal: dateSortVal(draw.date), main: {}, addl: {} });
       }
       const g = groups.get(key);
-      // Update sortVal to latest date in group
       const sv = dateSortVal(draw.date);
       if (sv > g.sortVal) g.sortVal = sv;
       for (const n of draw.main) {
@@ -77,7 +72,6 @@
       }
       g.addl[draw.addl] = (g.addl[draw.addl] || 0) + 1;
     }
-    // Sort newest first
     return [...groups.values()].sort((a, b) => b.sortVal - a.sortVal);
   }
 
@@ -100,13 +94,11 @@
 
   // Render: By Draw
   function renderDraw(draws, thead, tbody) {
-    // Header row
     let hrow = '<tr><th class="row-header">Date</th>';
     for (let n = NUM_MIN; n <= NUM_MAX; n++) hrow += `<th>${n}</th>`;
     hrow += '</tr>';
     thead.innerHTML = hrow;
 
-    // Data rows (already newest first from CSV)
     let html = '';
     for (const draw of draws) {
       html += `<tr><td class="row-label">${draw.date}</td>`;
@@ -128,7 +120,6 @@
 
   // Render: Grouped (week / month)
   function renderGrouped(groups, thead, tbody, tooltip) {
-    // Find max count across all groups for scaling
     let maxCount = 1;
     for (const g of groups) {
       for (let n = NUM_MIN; n <= NUM_MAX; n++) {
@@ -137,13 +128,11 @@
       }
     }
 
-    // Header
     let hrow = '<tr><th class="row-header">Period</th>';
     for (let n = NUM_MIN; n <= NUM_MAX; n++) hrow += `<th>${n}</th>`;
     hrow += '</tr>';
     thead.innerHTML = hrow;
 
-    // Rows
     let html = '';
     for (const g of groups) {
       html += `<tr><td class="row-label">${g.label}</td>`;
@@ -186,7 +175,6 @@
     const draws = parseCSV(txt);
 
     const thead = document.querySelector('#dist-table thead');
-    const tbody = document.querySelector('#dist-table tbody');
     const tooltip = document.getElementById('dist-tooltip');
     const buttons = document.querySelectorAll('#dist-controls button');
 
@@ -194,10 +182,13 @@
 
     function render() {
       tooltip.style.display = 'none';
-      // Clone tbody to remove old event listeners
-      const newTbody = tbody.cloneNode(false);
-      tbody.parentNode.replaceChild(newTbody, tbody);
+
+      // ── FIX: always get the current tbody from the live DOM ──
+      const oldTbody = document.querySelector('#dist-table tbody');
+      const newTbody = oldTbody.cloneNode(false);
+      oldTbody.parentNode.replaceChild(newTbody, oldTbody);
       const tb = document.querySelector('#dist-table tbody');
+      // ─────────────────────────────────────────────────────────
 
       if (currentMode === 'draw') {
         renderDraw(draws, thead, tb);
