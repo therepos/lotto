@@ -2,22 +2,100 @@ TITLE = "Check Your Combination (Interactive)"
 ORDER = 5
 
 def generate(df):
-    # We return raw HTML + a script tag. GitHub Pages renders raw HTML in Markdown.
-    # Paths are relative — js/ and data/ are siblings of index.md in _site/.
-    return """
+    # Build a 7x7 grid of numbers 1-49
+    cells = ""
+    for n in range(1, 50):
+        cells += f'<div class="ball" data-num="{n}">{n}</div>\n'
+
+    return f"""
 ## Check Your Combination (Interactive)
 
-Enter six numbers (1–49). Order doesn't matter.
+Pick 6 numbers from the grid below, then click **Check history**.
 
-<div id="combo-lookup" style="margin: 1rem 0;">
-  <input id="n1" type="number" min="1" max="49" style="width:4rem;"> 
-  <input id="n2" type="number" min="1" max="49" style="width:4rem;">
-  <input id="n3" type="number" min="1" max="49" style="width:4rem;">
-  <input id="n4" type="number" min="1" max="49" style="width:4rem;">
-  <input id="n5" type="number" min="1" max="49" style="width:4rem;">
-  <input id="n6" type="number" min="1" max="49" style="width:4rem;">
-  <button id="lookup-btn">Check history</button>
-  <div id="lookup-result" style="margin-top:0.5rem;font-weight:600;"></div>
+<style>
+#ball-grid {{
+  display: grid;
+  grid-template-columns: repeat(7, 40px);
+  gap: 6px;
+  margin: 1rem 0;
+}}
+.ball {{
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  background: #fff;
+  color: #333;
+  transition: all 0.15s ease;
+}}
+.ball:hover {{
+  border-color: #0366d6;
+  background: #f0f7ff;
+}}
+.ball.selected {{
+  background: #0366d6;
+  color: #fff;
+  border-color: #0366d6;
+}}
+.ball.disabled {{
+  opacity: 0.35;
+  cursor: not-allowed;
+}}
+#selected-display {{
+  margin: 0.5rem 0;
+  font-size: 14px;
+  color: #586069;
+}}
+#lookup-controls {{
+  margin: 0.5rem 0;
+  display: flex;
+  gap: 8px;
+}}
+#lookup-controls button {{
+  padding: 6px 16px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fafbfc;
+}}
+#lookup-controls button:hover {{
+  background: #f0f0f0;
+}}
+#lookup-controls button#lookup-btn {{
+  background: #0366d6;
+  color: #fff;
+  border-color: #0366d6;
+}}
+#lookup-controls button#lookup-btn:hover {{
+  background: #0255b3;
+}}
+#lookup-controls button#lookup-btn:disabled {{
+  opacity: 0.5;
+  cursor: not-allowed;
+}}
+#lookup-result {{
+  margin-top: 0.5rem;
+  font-weight: 600;
+}}
+</style>
+
+<div id="combo-lookup">
+  <div id="ball-grid">
+{cells}
+  </div>
+  <div id="selected-display">Selected: none</div>
+  <div id="lookup-controls">
+    <button id="lookup-btn" disabled>Check history</button>
+    <button id="clear-btn">Clear</button>
+  </div>
+  <div id="lookup-result"></div>
 </div>
 
 <script src="js/lookup.js"></script>
