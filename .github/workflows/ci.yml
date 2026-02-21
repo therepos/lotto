@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]          # or your default branch
     paths:
-      - 'app/**'
+      - 'docs/**'
       - 'scripts/**'
       - 'src/**'
       - 'requirements.txt'
@@ -37,7 +37,7 @@ jobs:
       - name: Fetch data
         run: python scripts/getdata.py
 
-      - name: Build app/index.md
+      - name: Build docs/index.md
         run: python scripts/buildpage.py
 
       - name: Commit & push changes

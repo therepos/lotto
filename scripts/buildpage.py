@@ -9,7 +9,7 @@ if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
     
 DATA_PATH = "static/data/sgtoto.csv"
-OUTPUT_PATH = "app/index.md"
+OUTPUT_PATH = "docs/index.md"
 ANALYSES_PKG = "src.analysis"
 
 def load_dataframe(path):
