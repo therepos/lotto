@@ -1,6 +1,6 @@
 # Lotto Analyses
 
-_Last updated: **2026-02-21 07:42 UTC**_
+_Last updated: **2026-02-21 07:43 UTC**_
 
 [Download data (CSV)](/data/sgtoto.csv)
 
@@ -25,7 +25,7 @@ Enter six numbers (1–49). Order doesn’t matter.
   <div id="lookup-result" style="margin-top:0.5rem;font-weight:600;"></div>
 </div>
 
-<script src="/lookup.js"></script>
+<script src="/analysis/lookup.js"></script>
 
 ## Duplicate Check of Latest Draw
 
