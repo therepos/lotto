@@ -10,7 +10,7 @@ def generate(df):
     return f"""
 ## Check Your Combination (Interactive)
 
-Pick 6 numbers from the grid below, then click **Check history**.
+Pick 6 or 7 numbers from the grid below, then click **Check history**.
 
 <style>
 #ball-grid {{
