@@ -10,7 +10,7 @@ if str(repo_root) not in sys.path:
     
 DATA_PATH = "static/data/sgtoto.csv"
 OUTPUT_PATH = "app/index.md"
-ANALYSES_PKG = "scripts"
+ANALYSES_PKG = "src/analysis"
 
 def load_dataframe(path):
     df = pd.read_csv(path)
@@ -39,7 +39,7 @@ def buildpage(df, modules):
         "",
         f"_Last updated: **{ts}**_",
         "",
-        f"[Download data (CSV)](./assets/sgtoto.csv)",
+        f"[Download data (CSV)](/data/sgtoto.csv)",
         "",
         "## Table of Contents",
     ]
