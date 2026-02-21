@@ -10,7 +10,7 @@ if str(repo_root) not in sys.path:
     
 DATA_PATH = "static/data/sgtoto.csv"
 OUTPUT_PATH = "app/index.md"
-ANALYSES_PKG = "src/analysis"
+ANALYSES_PKG = "src.analysis"
 
 def load_dataframe(path):
     df = pd.read_csv(path)
