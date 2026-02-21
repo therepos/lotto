@@ -1,5 +1,5 @@
 (async function () {
-  const csvUrl = '/data/sgtoto.csv';
+  const csvUrl = '/static/data/sgtoto.csv';
 
   function parseCSV(text) {
     // Simple CSV split (your file has no embedded commas/quotes in numbers/dates)
