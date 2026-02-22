@@ -44,23 +44,27 @@ def generate(df):
 ## Number Frequencies
 
 <span style="font-size:12px;color:#6b7280;">
-  <span style="display:inline-block;width:10px;height:10px;background:#f97316;border-radius:2px;vertical-align:middle;"></span> appeared in latest draw
+  <span style="display:inline-block;width:10px;height:10px;border:2.5px solid #f97316;border-radius:2px;vertical-align:middle;"></span> appeared in latest draw
 </span>
 
 <style>
 #freq-section {{
   display: flex;
+  flex-direction: column;
   gap: 2rem;
   margin: 1rem auto;
-  align-items: flex-start;
+  align-items: center;
   max-width: 960px;
 }}
 #freq-left {{
-  flex: 0 0 auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }}
 #freq-right {{
-  flex: 1 1 auto;
-  min-width: 0;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
 }}
 
 #freq-grid {{
@@ -143,20 +147,31 @@ def generate(df):
   color: #374151;
   font-size: 11px;
 }}
-.bar-label.latest {{
-  color: #f97316;
-}}
 .bar-track {{
   flex: 1;
   height: 14px;
   background: #f3f4f6;
   border-radius: 2px;
   overflow: hidden;
+  display: flex;
+  align-items: stretch;
 }}
 .bar-fill {{
   height: 100%;
   border-radius: 2px;
   transition: width 0.3s ease;
+  flex-shrink: 0;
+}}
+.bar-fill.has-marker {{
+  border-radius: 2px 0 0 2px;
+}}
+.bar-latest-marker {{
+  width: 6px;
+  min-width: 6px;
+  height: 100%;
+  background: #f97316;
+  border-radius: 0 2px 2px 0;
+  flex-shrink: 0;
 }}
 .bar-count {{
   min-width: 24px;
@@ -166,7 +181,6 @@ def generate(df):
 
 @media (max-width: 700px) {{
   #freq-section {{
-    flex-direction: column;
     align-items: center;
   }}
   #freq-grid {{
@@ -219,19 +233,12 @@ def generate(df):
 
   function textColor(t) {{ return t > 0.5 ? '#fff' : '#1e3a8a'; }}
 
-  // Color the heatmap grid
+  // Color the heatmap grid — always use heat color, outline-only for latest draw
   document.querySelectorAll('.freq-cell').forEach(cell => {{
     const t = parseFloat(cell.dataset.t);
-    const isLatest = cell.dataset.latest === '1';
-    if (isLatest) {{
-      cell.style.background = ORANGE;
-      cell.querySelector('.freq-num').style.color = '#fff';
-      cell.querySelector('.freq-count').style.color = '#fff';
-    }} else {{
-      cell.style.background = interpolate(t);
-      cell.querySelector('.freq-num').style.color = textColor(t);
-      cell.querySelector('.freq-count').style.color = textColor(t);
-    }}
+    cell.style.background = interpolate(t);
+    cell.querySelector('.freq-num').style.color = textColor(t);
+    cell.querySelector('.freq-count').style.color = textColor(t);
   }});
 
   // Bar chart
@@ -248,11 +255,16 @@ def generate(df):
       const pct = maxCount > 0 ? (d.count / maxCount * 100) : 0;
       const t = (d.count - minCount) / range;
       const isLatest = latestNums.has(d.num);
-      const color = isLatest ? ORANGE : interpolate(t);
-      const labelCls = isLatest ? 'bar-label latest' : 'bar-label';
+      const color = interpolate(t);
+      const fillCls = isLatest ? 'bar-fill has-marker' : 'bar-fill';
       html += `<div class="bar-row">`;
-      html += `<span class="${{labelCls}}">${{d.num}}</span>`;
-      html += `<div class="bar-track"><div class="bar-fill" style="width:${{pct}}%;background:${{color}}"></div></div>`;
+      html += `<span class="bar-label">${{d.num}}</span>`;
+      html += `<div class="bar-track">`;
+      html += `<div class="${{fillCls}}" style="width:${{pct}}%;background:${{color}}"></div>`;
+      if (isLatest) {{
+        html += `<div class="bar-latest-marker"></div>`;
+      }}
+      html += `</div>`;
       html += `<span class="bar-count">${{d.count}}</span>`;
       html += `</div>`;
     }}
