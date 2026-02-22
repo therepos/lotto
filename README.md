@@ -24,8 +24,10 @@ lotto
 
 - our numbers (expire)
 - recommendation
+- better in app? js vs py deploy
 
 ## Resources
 
 - [Lottolyzer](https://en.lottolyzer.com/history/singapore/toto)
+
 
