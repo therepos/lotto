@@ -1,7 +1,9 @@
 # Usage
+
 Analyse Singapore Pools Toto results.
 
 # Structure
+
 ```
 lotto
 ├── .github
@@ -19,7 +21,14 @@ lotto
 ```
 
 ## Notes
+
+- our numbers (expire)
+- recommendation
+
+## License
+
 - This work is licensed under [MIT](https://choosealicense.com/licenses/mit/). 
 
 ## Resources
+
 - [SGTOTO](https://en.lottolyzer.com/history/singapore/toto)
