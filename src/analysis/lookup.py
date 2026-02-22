@@ -4,8 +4,6 @@ ORDER = 5
 def generate(df):
     return """
 
-Pick 6 (or 7 for SG Toto) numbers, then click **Check history**.
-
 <style>
 #combo-section {
   display: flex;
