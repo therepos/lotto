@@ -287,5 +287,5 @@ Pick 6 or 7 numbers, then click **Check history**.
   </div>
 </div>
 
-<script src="js/lookup.js"></script>
+<script src="js/lookup.js?v=3"></script>
 """
