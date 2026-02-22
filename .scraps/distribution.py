@@ -8,10 +8,46 @@ def generate(df):
 View how each number (1–49) appears across draws over time.
 
 <style>
+#dist-view-toggle {
+  display: flex;
+  gap: 0;
+  margin: 1rem 0 0 0;
+}
+#dist-view-toggle button {
+  padding: 8px 20px;
+  cursor: pointer;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+#dist-view-toggle button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+#dist-view-toggle button:last-child {
+  border-radius: 0 4px 4px 0;
+}
+#dist-view-toggle button + button {
+  border-left: none;
+}
+#dist-view-toggle button:hover {
+  background: #f3f4f6;
+}
+#dist-view-toggle button.active {
+  background: #1e3a8a;
+  color: #fff;
+  border-color: #1e3a8a;
+}
+#dist-view-toggle button.active + button {
+  border-left: 1px solid #d1d5db;
+}
+
 #dist-controls {
   display: flex;
   gap: 0;
-  margin: 1rem 0 0.5rem 0;
+  margin: 0.5rem 0 0.5rem 0;
 }
 #dist-controls button {
   padding: 8px 20px;
@@ -52,10 +88,17 @@ View how each number (1–49) appears across draws over time.
   border: 1px solid #e5e7eb;
   border-radius: 4px;
 }
+#dist-table-wrap.compact-mode {
+  overflow-x: hidden;
+}
 #dist-table {
   border-collapse: collapse;
   font-size: 12px;
   min-width: 100%;
+}
+#dist-table.compact #dist-table {
+  min-width: auto;
+  width: 100%;
 }
 #dist-table thead {
   position: sticky;
@@ -102,6 +145,46 @@ View how each number (1–49) appears across draws over time.
   white-space: nowrap;
   font-weight: 500;
 }
+
+/* Compact mode: smaller cells */
+#dist-table-wrap.compact-mode #dist-table th {
+  min-width: 0;
+  padding: 2px 0;
+  font-size: 9px;
+  width: auto;
+}
+#dist-table-wrap.compact-mode #dist-table th.row-header {
+  min-width: 80px;
+  padding: 2px 6px;
+  font-size: 10px;
+}
+#dist-table-wrap.compact-mode #dist-table td {
+  width: auto;
+  height: 14px;
+  padding: 0;
+  border-color: #f0f0f0;
+}
+#dist-table-wrap.compact-mode #dist-table td.row-label {
+  padding: 1px 6px;
+  font-size: 10px;
+  height: 14px;
+}
+#dist-table-wrap.compact-mode .dot {
+  width: 6px;
+  height: 6px;
+}
+#dist-table-wrap.compact-mode .heat-cell {
+  font-size: 8px;
+}
+
+/* Latest row highlight */
+#dist-table tr.latest-row td {
+  background-color: #fffde7 !important;
+}
+#dist-table tr.latest-row td.row-label {
+  background-color: #fffde7 !important;
+}
+
 #dist-table .dot {
   width: 10px;
   height: 10px;
@@ -138,12 +221,16 @@ View how each number (1–49) appears across draws over time.
 }
 </style>
 
+<div id="dist-view-toggle">
+  <button class="active" data-view="compact">Compact</button>
+  <button data-view="table">Table</button>
+</div>
 <div id="dist-controls">
   <button class="active" data-mode="draw">By Draw</button>
   <button data-mode="week">By Week</button>
   <button data-mode="month">By Month</button>
 </div>
-<div id="dist-table-wrap">
+<div id="dist-table-wrap" class="compact-mode">
   <table id="dist-table"><thead></thead><tbody></tbody></table>
 </div>
 <div id="dist-tooltip"></div>

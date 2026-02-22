@@ -16,7 +16,6 @@ OUTPUT_DIR = "_site"
 OUTPUT_PATH = os.path.join(OUTPUT_DIR, "index.html")
 ANALYSES_PKG = "src.analysis"
 
-# Assets to copy into _site/ for the deployed site
 ASSETS = {
     "static/data/sgtoto.csv": os.path.join(OUTPUT_DIR, "data", "sgtoto.csv"),
     "src/analysis/lookup.js": os.path.join(OUTPUT_DIR, "js", "lookup.js"),
@@ -31,6 +30,7 @@ HTML_TEMPLATE = """\
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lotto Analyses</title>
   <style>
+    * {{ box-sizing: border-box; }}
     body {{
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                    Helvetica, Arial, sans-serif;
@@ -60,14 +60,20 @@ HTML_TEMPLATE = """\
       padding: 2px 6px;
       border-radius: 3px;
     }}
-    input[type="number"] {{
-      width: 4rem;
-      padding: 4px;
-      margin: 2px;
-    }}
     button {{
       padding: 6px 16px;
       cursor: pointer;
+    }}
+
+    /* Mobile: center all analysis sections */
+    @media (max-width: 700px) {{
+      body {{
+        padding: 0 0.5rem;
+        margin: 1rem auto;
+      }}
+      h1 {{ font-size: 1.4rem; text-align: center; }}
+      h2 {{ font-size: 1.1rem; text-align: center; }}
+      p {{ text-align: center; }}
     }}
   </style>
 </head>
@@ -111,7 +117,6 @@ def discover_analyses():
 def buildpage(df, modules):
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    # Build markdown content — no Table of Contents
     md_parts = [
         "# Lotto Analyses",
         "",
@@ -129,7 +134,6 @@ def buildpage(df, modules):
 
     md_text = "\n".join(md_parts)
 
-    # Convert markdown to HTML, preserving raw HTML blocks
     body_html = markdown.markdown(
         md_text,
         extensions=["tables", "toc"],
