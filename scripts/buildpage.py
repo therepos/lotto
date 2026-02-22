@@ -43,6 +43,7 @@ HTML_TEMPLATE = """\
       line-height: 1.6;
       color: #24292e;
     }}
+    h1 {{ text-align: center; }}
     table {{
       border-collapse: collapse;
       margin: 1rem 0;
