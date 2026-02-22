@@ -88,11 +88,10 @@
   clearHistBtn.addEventListener('click', () => { clearHistoryData(); renderHistory(); });
 
   function runChecks(picks, draws) {
-    // Numbers from the draw before the latest (the "previous draw")
-    const prevDraw = draws.length > 1 ? draws[1] : null;
-    const prevDrawNums = prevDraw
-      ? new Set([...prevDraw.main, prevDraw.addl])
-      : new Set();
+    // For user searches, the "previous draw" is the latest draw (draws[0])
+    // because the user is searching now, and the most recent draw is the one before now
+    const latestDraw = draws[0];
+    const prevDrawNums = new Set([...latestDraw.main, latestDraw.addl]);
 
     // Check if exact 6-number combination exists in all history
     let comboFoundDate = '';

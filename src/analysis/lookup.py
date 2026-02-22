@@ -38,11 +38,13 @@ def generate(df):
             classes += " hit-prev"
         latest_balls_html += f'<span class="{classes}">{n}</span>\n'
 
-    # Pad to 7 slots
-    for _ in range(7 - len(latest_nums)):
-        latest_balls_html += '<span class="combo-ball empty"></span>\n'
+    # Additional number as 7th ball
+    addl_classes = "combo-ball addl-ball"
+    if latest_addl in prev_all:
+        addl_classes += " hit-prev"
+    latest_balls_html += f'<span class="{addl_classes}">+{latest_addl}</span>\n'
 
-    combo_date_html = f'<span class="combo-found-date">{combo_found_date}</span>' if combo_found_date else '<span class="combo-not-found">Not Found</span>'
+    combo_date_html = f'<span class="found-date">{combo_found_date}</span>' if combo_found_date else '<span class="not-found">Not Found</span>'
 
     return f"""
 
@@ -145,10 +147,10 @@ Pick 6 or 7 numbers, then click **Check history**.
   font-weight: 600; color: #374151; font-size: 12px; white-space: nowrap;
 }}
 .combo-dates .found-date {{
-  font-size: 11px; color: #f97316; white-space: nowrap;
+  font-size: 12px; color: #f97316; white-space: nowrap;
 }}
 .combo-dates .not-found {{
-  font-size: 11px; color: #9ca3af; font-style: italic; white-space: nowrap;
+  font-size: 12px; color: #9ca3af; white-space: nowrap;
 }}
 
 .combo-balls {{
@@ -180,6 +182,9 @@ Pick 6 or 7 numbers, then click **Check history**.
 .combo-ball.empty {{
   background: #f9fafb;
   border-color: #e5e7eb;
+}}
+.combo-ball.addl-ball {{
+  border-style: dashed;
 }}
 
 /* ── Search History ── */
