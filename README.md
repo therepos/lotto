@@ -27,4 +27,5 @@ lotto
 
 ## Resources
 
-- [SGTOTO](https://en.lottolyzer.com/history/singapore/toto)
+- [Lottolyzer](https://en.lottolyzer.com/history/singapore/toto)
+
