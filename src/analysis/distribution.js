@@ -1,9 +1,9 @@
 (async function () {
-  const MAIN_COLOR   = '#3b82f6';
-  const ADDL_COLOR   = '#ef4444';
-  const EMPTY_COLOR  = '#ffffff';
-  const LOW_COLOR    = '#dbeafe';
-  const HIGH_COLOR   = '#1e3a8a';
+  const MAIN_COLOR = '#3b82f6';
+  const ADDL_COLOR = '#ef4444';
+  const EMPTY_COLOR = '#ffffff';
+  const LOW_COLOR = '#dbeafe';
+  const HIGH_COLOR = '#1e3a8a';
   const HIGHLIGHT_BG = '#fffde7';
 
   function currentGameKey() {
@@ -21,7 +21,7 @@
       const cols = line.split(',');
       return {
         date: cols[0].trim(),
-        main: [1,2,3,4,5,6].map(i => parseInt(cols[i], 10)),
+        main: [1, 2, 3, 4, 5, 6].map(i => parseInt(cols[i], 10)),
         addl: parseInt(cols[7], 10)
       };
     }).filter(r => r.main.every(n => !isNaN(n)) && !isNaN(r.addl));
@@ -31,13 +31,13 @@
     const d = new Date(dateStr);
     const wStart = new Date(d);
     wStart.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${wStart.getFullYear()} ${months[wStart.getMonth()]} ${wStart.getDate()}`;
   }
 
   function monthKey(dateStr) {
     const d = new Date(dateStr);
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${d.getFullYear()} ${months[d.getMonth()]}`;
   }
 
@@ -59,11 +59,11 @@
   }
 
   function hexToRgb(hex) {
-    return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+    return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)];
   }
   function interpolateColor(low, high, t) {
     const lo = hexToRgb(low), hi = hexToRgb(high);
-    return `rgb(${Math.round(lo[0]+(hi[0]-lo[0])*t)},${Math.round(lo[1]+(hi[1]-lo[1])*t)},${Math.round(lo[2]+(hi[2]-lo[2])*t)})`;
+    return `rgb(${Math.round(lo[0] + (hi[0] - lo[0]) * t)},${Math.round(lo[1] + (hi[1] - lo[1]) * t)},${Math.round(lo[2] + (hi[2] - lo[2]) * t)})`;
   }
 
   function renderDraw(draws, thead, tbody, NUM_MIN, NUM_MAX) {
@@ -94,7 +94,7 @@
     let maxCount = 1;
     for (const g of groups)
       for (let n = NUM_MIN; n <= NUM_MAX; n++) {
-        const total = (g.main[n]||0) + (g.addl[n]||0);
+        const total = (g.main[n] || 0) + (g.addl[n] || 0);
         if (total > maxCount) maxCount = total;
       }
 
@@ -109,11 +109,11 @@
       const cls = i === 0 ? ' class="latest-row"' : '';
       html += `<tr${cls}><td class="row-label">${g.label}</td>`;
       for (let n = NUM_MIN; n <= NUM_MAX; n++) {
-        const mc = g.main[n]||0, ac = g.addl[n]||0, total = mc + ac;
+        const mc = g.main[n] || 0, ac = g.addl[n] || 0, total = mc + ac;
         if (total === 0) {
-          html += `<td style="background:${i===0?HIGHLIGHT_BG:EMPTY_COLOR}"></td>`;
+          html += `<td style="background:${i === 0 ? HIGHLIGHT_BG : EMPTY_COLOR}"></td>`;
         } else {
-          const t = Math.min(total/maxCount, 1);
+          const t = Math.min(total / maxCount, 1);
           const bg = interpolateColor(LOW_COLOR, HIGH_COLOR, t);
           html += `<td><div class="heat-cell" style="background:${bg}" data-tip="Number ${n} — ${total} time(s) (${mc} main, ${ac} addl)">${total}</div></td>`;
         }
@@ -129,8 +129,8 @@
       tooltip.style.display = 'block';
     };
     tbody.onmousemove = (e) => {
-      tooltip.style.left = (e.clientX+12)+'px';
-      tooltip.style.top = (e.clientY-30)+'px';
+      tooltip.style.left = (e.clientX + 12) + 'px';
+      tooltip.style.top = (e.clientY - 30) + 'px';
     };
     tbody.onmouseout = (e) => {
       if (!e.target.closest('.heat-cell')) tooltip.style.display = 'none';
@@ -161,7 +161,7 @@
       for (const g of groups) {
         const row = [g.label];
         for (let n = NUM_MIN; n <= NUM_MAX; n++) {
-          const total = (g.main[n]||0) + (g.addl[n]||0);
+          const total = (g.main[n] || 0) + (g.addl[n] || 0);
           row.push(total || '');
         }
         rows.push(row);
@@ -198,6 +198,9 @@
     const csvUrl = g.csv;
     const NUM_MIN = 1;
     const NUM_MAX = g.maxNum;
+
+    const rangeEl = document.getElementById('dist-range');
+    if (rangeEl) rangeEl.textContent = `1–${NUM_MAX}`;
 
     try {
       const res = await fetch(csvUrl, { cache: 'no-store' });
