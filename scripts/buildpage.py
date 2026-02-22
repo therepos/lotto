@@ -24,6 +24,8 @@ ASSETS = {
     # js
     "src/analysis/lookup.js": os.path.join(OUTPUT_DIR, "js", "lookup.js"),
     "src/analysis/distribution.js": os.path.join(OUTPUT_DIR, "js", "distribution.js"),
+    "src/analysis/heatmap.js": os.path.join(OUTPUT_DIR, "js", "heatmap.js"),
+    "src/analysis/frequencies.js": os.path.join(OUTPUT_DIR, "js", "frequencies.js"),    
 }
 
 WIDE_WIDGETS = {"Distribution"}

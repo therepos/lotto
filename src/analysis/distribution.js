@@ -14,6 +14,22 @@
     return (window.LOTTO_GAMES && window.LOTTO_GAMES[key]) ? window.LOTTO_GAMES[key] : window.LOTTO_GAMES.sgtoto;
   }
 
+  function normalizeDate(s) {
+    s = (s || '').trim();
+    // already ISO
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+    // DD/MM/YY or DD/MM/YYYY
+    const m = s.match(/^(\d{2})\/(\d{2})\/(\d{2}|\d{4})$/);
+    if (m) {
+      const dd = m[1], mm = m[2];
+      let yy = m[3];
+      if (yy.length === 2) yy = String(2000 + parseInt(yy, 10)); // 00-99 -> 2000-2099
+      return `${yy}-${mm}-${dd}`;
+    }
+    return s;
+  }  
+    
   function parseCSV(text) {
     const lines = text.trim().split('\n');
     lines.shift();
