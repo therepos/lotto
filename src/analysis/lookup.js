@@ -212,7 +212,9 @@
       pill.textContent = entry.matchDate;
     } else if (entry.matchType === 'partial') {
       pill.classList.add('pill-partial');
-      pill.textContent = `${entry.bestOverlap}/6`;
+      const overlap = entry.bestOverlap ?? (entry.matchedNums ? entry.matchedNums.length : '?');
+      const total = entry.numbers ? entry.numbers.length : 6;
+      pill.textContent = `${overlap}/${total}`;
     } else {
       pill.classList.add('pill-none');
       pill.textContent = 'No match';
