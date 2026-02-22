@@ -31,7 +31,7 @@ HTML_TEMPLATE = """\
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lotto Analyses</title>
+  <title>Lotto</title>
   <style>
     * {{ box-sizing: border-box; }}
     body {{
@@ -145,11 +145,8 @@ def discover_analyses():
 
 
 def buildpage(df, modules):
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-
-    # Header (outside any widget)
-    header_md = f"# Lotto Analyses\n\n_Last updated: **{ts}**_\n\n[Download data (CSV)](data/sgtoto.csv)\n\n"
-    header_html = markdown.markdown(header_md, extensions=["tables", "toc"])
+    # Header
+    header_html = '<h1>Lotto</h1>\n'
 
     # Build each widget panel
     panels_html = []
@@ -169,6 +166,14 @@ def buildpage(df, modules):
         panels_html.append(panel)
 
     body = header_html + "\n".join(panels_html)
+
+    # Footer
+    body += """
+<footer style="margin-top:2rem;padding:1rem 0;border-top:1px solid #e5e7eb;font-size:12px;color:#9ca3af;display:flex;gap:1.5rem;justify-content:center;">
+  <a href="https://github.com/therepos/lotto" style="color:#9ca3af;text-decoration:none;">GitHub</a>
+  <a href="https://en.lottolyzer.com/history/singapore/toto" style="color:#9ca3af;text-decoration:none;">Source Data</a>
+</footer>
+"""
     html = HTML_TEMPLATE.format(body=body)
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
