@@ -85,6 +85,8 @@ HTML_TEMPLATE = """\
     }}
     .widget-panel:not(.widget-wide) {{
       max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
     }}
 
     /* Mobile: center all analysis sections */
