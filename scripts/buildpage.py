@@ -109,7 +109,7 @@ HTML_TEMPLATE = """\
     // Single source of truth for games (filenames unchanged)
     window.LOTTO_GAMES = {{
       sgtoto: {{
-        label: "Singapore Toto (6/49)",
+        label: "Singapore Toto",
         csv: "data/sgtoto.csv",
         maxNum: 49,
         minPick: 6,
