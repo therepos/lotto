@@ -46,7 +46,6 @@ def generate(df):
         pill_text = "No match"
 
     return f"""
-## Check Your Combination
 
 Pick 6 or 7 numbers, then click **Check history**.
 

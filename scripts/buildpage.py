@@ -22,6 +22,9 @@ ASSETS = {
     "src/analysis/distribution.js": os.path.join(OUTPUT_DIR, "js", "distribution.js"),
 }
 
+# Modules whose widget panel should be full-width / larger
+WIDE_WIDGETS = {"Distribution"}
+
 HTML_TEMPLATE = """\
 <!DOCTYPE html>
 <html lang="en">
@@ -65,6 +68,25 @@ HTML_TEMPLATE = """\
       cursor: pointer;
     }}
 
+    /* Widget panels */
+    .widget-panel {{
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }}
+    .widget-panel h2 {{
+      margin-top: 0;
+      font-size: 1rem;
+      color: #1f2937;
+    }}
+    .widget-panel.widget-wide {{
+      /* full width, no max-width constraint */
+    }}
+    .widget-panel:not(.widget-wide) {{
+      max-width: 600px;
+    }}
+
     /* Mobile: center all analysis sections */
     @media (max-width: 700px) {{
       body {{
@@ -74,6 +96,12 @@ HTML_TEMPLATE = """\
       h1 {{ font-size: 1.4rem; text-align: center; }}
       h2 {{ font-size: 1.1rem; text-align: center; }}
       p {{ text-align: center; }}
+      .widget-panel {{
+        padding: 1rem;
+      }}
+      .widget-panel:not(.widget-wide) {{
+        max-width: 100%;
+      }}
     }}
   </style>
 </head>
@@ -117,29 +145,29 @@ def discover_analyses():
 def buildpage(df, modules):
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    md_parts = [
-        "# Lotto Analyses",
-        "",
-        f"_Last updated: **{ts}**_",
-        "",
-        "[Download data (CSV)](data/sgtoto.csv)",
-        "",
-    ]
+    # Header (outside any widget)
+    header_md = f"# Lotto Analyses\n\n_Last updated: **{ts}**_\n\n[Download data (CSV)](data/sgtoto.csv)\n\n"
+    header_html = markdown.markdown(header_md, extensions=["tables", "toc"])
 
-    for _, _, gen in modules:
+    # Build each widget panel
+    panels_html = []
+    for _, title, gen in modules:
         try:
-            md_parts.append(gen(df))
+            content_md = gen(df)
         except Exception as e:
-            md_parts.append(f"## Error\nCould not render this section: `{e}`\n")
+            content_md = f"\nCould not render this section: `{e}`\n"
 
-    md_text = "\n".join(md_parts)
+        # Convert the module markdown to HTML
+        section_md = f"## {title}\n\n{content_md}"
+        section_html = markdown.markdown(section_md, extensions=["tables", "toc"])
 
-    body_html = markdown.markdown(
-        md_text,
-        extensions=["tables", "toc"],
-    )
+        is_wide = title in WIDE_WIDGETS
+        cls = "widget-panel widget-wide" if is_wide else "widget-panel"
+        panel = f'<div class="{cls}">\n{section_html}\n</div>'
+        panels_html.append(panel)
 
-    html = HTML_TEMPLATE.format(body=body_html)
+    body = header_html + "\n".join(panels_html)
+    html = HTML_TEMPLATE.format(body=body)
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:

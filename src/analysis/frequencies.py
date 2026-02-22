@@ -1,5 +1,5 @@
-TITLE = "Number Frequencies"
-ORDER = 20
+TITLE = "Frequencies"
+ORDER = 21
 
 def generate(df):
     df = df.copy()
@@ -17,21 +17,6 @@ def generate(df):
         for n in df[f"Num{i}"]:
             counts[int(n)] = counts.get(int(n), 0) + 1
 
-    min_count = min(counts.values()) if counts else 0
-    max_count = max(counts.values()) if counts else 1
-    count_range = max_count - min_count or 1
-
-    # Build grid cells with latest-draw flag
-    grid_cells = ""
-    for n in range(1, 50):
-        c = counts.get(n, 0)
-        t = (c - min_count) / count_range
-        is_latest = 1 if n in latest_all else 0
-        grid_cells += f'<div class="freq-cell" data-num="{n}" data-count="{c}" data-t="{t:.3f}" data-latest="{is_latest}">'
-        grid_cells += f'<span class="freq-num">{n}</span>'
-        grid_cells += f'<span class="freq-count">{c}</span>'
-        grid_cells += '</div>\n'
-
     # Bar data JSON
     bar_data = ",".join(
         f'{{"num":{n},"count":{counts.get(n,0)},"latest":{1 if n in latest_all else 0}}}'
@@ -41,61 +26,12 @@ def generate(df):
     latest_nums_js = ",".join(str(n) for n in sorted(latest_all))
 
     return f"""
-## Number Frequencies
 
 <span style="font-size:12px;color:#6b7280;">
-  <span style="display:inline-block;width:10px;height:10px;border:2.5px solid #f97316;border-radius:2px;vertical-align:middle;"></span> appeared in latest draw
+  <span style="display:inline-block;width:6px;height:12px;background:#f97316;border-radius:1px;vertical-align:middle;"></span> appeared in latest draw
 </span>
 
 <style>
-#freq-section {{
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  margin: 1rem auto;
-  align-items: center;
-  max-width: 960px;
-}}
-#freq-left {{
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}}
-#freq-right {{
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-}}
-
-#freq-grid {{
-  display: grid;
-  grid-template-columns: repeat(7, 48px);
-  gap: 3px;
-}}
-.freq-cell {{
-  width: 48px;
-  height: 42px;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  transition: transform 0.1s ease;
-  cursor: default;
-  position: relative;
-}}
-.freq-cell:hover {{
-  transform: scale(1.1);
-  z-index: 1;
-}}
-.freq-cell[data-latest="1"] {{
-  outline: 3px solid #f97316;
-  outline-offset: -1px;
-}}
-.freq-num {{ font-weight: 700; font-size: 13px; }}
-.freq-count {{ font-size: 10px; opacity: 0.8; }}
-
 #freq-bar-controls {{
   display: flex;
   gap: 0;
@@ -178,46 +114,20 @@ def generate(df):
   font-size: 11px;
   color: #6b7280;
 }}
-
-@media (max-width: 700px) {{
-  #freq-section {{
-    align-items: center;
-  }}
-  #freq-grid {{
-    grid-template-columns: repeat(7, 1fr);
-    max-width: 340px;
-    width: 100%;
-  }}
-  .freq-cell {{
-    width: 100%;
-    height: 38px;
-  }}
-  #freq-right {{
-    width: 100%;
-  }}
-}}
 </style>
 
-<div id="freq-section">
-  <div id="freq-left">
-    <div id="freq-grid">
-{grid_cells}
-    </div>
+<div>
+  <div id="freq-bar-controls">
+    <button class="active" data-sort="number">By Number</button>
+    <button data-sort="frequency">By Frequency</button>
   </div>
-  <div id="freq-right">
-    <div id="freq-bar-controls">
-      <button class="active" data-sort="number">By Number</button>
-      <button data-sort="frequency">By Frequency</button>
-    </div>
-    <div id="freq-bars"></div>
-  </div>
+  <div id="freq-bars"></div>
 </div>
 
 <script>
 (function() {{
   const LOW_COLOR = [219, 234, 254];
   const HIGH_COLOR = [30, 58, 138];
-  const ORANGE = '#f97316';
   const data = [{bar_data}];
   const latestNums = new Set([{latest_nums_js}]);
   const maxCount = Math.max(...data.map(d => d.count));
@@ -231,17 +141,6 @@ def generate(df):
     return `rgb(${{r}},${{g}},${{b}})`;
   }}
 
-  function textColor(t) {{ return t > 0.5 ? '#fff' : '#1e3a8a'; }}
-
-  // Color the heatmap grid — always use heat color, outline-only for latest draw
-  document.querySelectorAll('.freq-cell').forEach(cell => {{
-    const t = parseFloat(cell.dataset.t);
-    cell.style.background = interpolate(t);
-    cell.querySelector('.freq-num').style.color = textColor(t);
-    cell.querySelector('.freq-count').style.color = textColor(t);
-  }});
-
-  // Bar chart
   const barsDiv = document.getElementById('freq-bars');
   const sortBtns = document.querySelectorAll('#freq-bar-controls button');
 
