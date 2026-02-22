@@ -1,46 +1,22 @@
-(async function () {
-  const csvUrl = 'data/sgtoto.csv';
-  const MIN_PICK = 6;
-  const MAX_PICK = 7;
+(function () {
   const MAX_HISTORY = 10;
-  const STORAGE_KEY = 'lotto-lookup-history-v2';
-  const selected = new Set();
 
-  const grid = document.getElementById('ball-grid');
-  const display = document.getElementById('selected-display');
-  const checkBtn = document.getElementById('lookup-btn');
-  const clearBtn = document.getElementById('clear-btn');
-  const resultsDiv = document.getElementById('check-results');
-  const historyDiv = document.getElementById('search-history');
-  const clearHistBtn = document.getElementById('clear-history-btn');
-  const balls = grid.querySelectorAll('.ball');
-
-  // Clear old v1 history
-  try { localStorage.removeItem('lotto-lookup-history'); } catch(e) {}
-
-  function loadHistory() {
-    try {
-      const r = localStorage.getItem(STORAGE_KEY);
-      if (!r) return [];
-      const parsed = JSON.parse(r);
-      // Validate entries — only keep well-formed v2 entries
-      return parsed.filter(e =>
-        e && e.searchDate && Array.isArray(e.numbers) && e.numbers.length >= 6
-      );
-    } catch (e) { return []; }
+  function currentGameKey() {
+    return (window.LOTTO_STATE && window.LOTTO_STATE.game) ? window.LOTTO_STATE.game : "sgtoto";
   }
-  function saveHistory(h) {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(h)); } catch (e) {}
+  function currentGame() {
+    const key = currentGameKey();
+    return (window.LOTTO_GAMES && window.LOTTO_GAMES[key]) ? window.LOTTO_GAMES[key] : window.LOTTO_GAMES.sgtoto;
   }
-  function clearHistoryData() {
-    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  function storageKeyForGame(gameKey) {
+    return `lotto-lookup-history-${gameKey}-v1`;
   }
 
   function parseCSV(text) {
-    const lines = text.trim().split('\n');
-    lines.shift();
+    const lines = text.trim().split("\n");
+    lines.shift(); // header
     return lines.map(line => {
-      const cols = line.split(',');
+      const cols = line.split(",");
       return {
         date: cols[0].trim(),
         main: [1,2,3,4,5,6].map(i => parseInt(cols[i], 10)).sort((a,b) => a - b),
@@ -49,232 +25,305 @@
     }).filter(r => r.main.every(n => !isNaN(n)) && !isNaN(r.addl));
   }
 
-  function updateUI() {
-    const count = selected.size;
-    balls.forEach(b => {
-      const num = parseInt(b.dataset.num, 10);
-      if (selected.has(num)) {
-        b.classList.add('selected');
-        b.classList.remove('disabled');
-      } else {
-        b.classList.remove('selected');
-        if (count >= MAX_PICK) b.classList.add('disabled');
-        else b.classList.remove('disabled');
-      }
-    });
-    if (count === 0) {
-      display.textContent = 'Selected: none';
-    } else {
-      const sorted = [...selected].sort((a, b) => a - b);
-      const remaining = MIN_PICK - count;
-      let hint = '';
-      if (remaining > 0) hint = ` (pick ${remaining} more)`;
-      else if (count < MAX_PICK) hint = ' (or pick 1 more for 7-number check)';
-      display.textContent = 'Selected: ' + sorted.join(', ') + hint;
-    }
-    checkBtn.disabled = count < MIN_PICK;
+  function ymdNow() {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   }
 
-  grid.addEventListener('click', e => {
-    const ball = e.target.closest('.ball');
-    if (!ball) return;
-    const num = parseInt(ball.dataset.num, 10);
-    if (selected.has(num)) selected.delete(num);
-    else if (selected.size < MAX_PICK) selected.add(num);
-    updateUI();
-  });
+  function same6(a, b) {
+    if (a.length !== 6 || b.length !== 6) return false;
+    for (let i = 0; i < 6; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
 
-  clearBtn.addEventListener('click', () => { selected.clear(); updateUI(); resultsDiv.style.display = 'none'; });
-  clearHistBtn.addEventListener('click', () => { clearHistoryData(); renderHistory(); });
-
-  function runChecks(picks, draws) {
-    // For user searches, the "previous draw" is the latest draw (draws[0])
-    // because the user is searching now, and the most recent draw is the one before now
-    const latestDraw = draws[0];
-    const prevDrawNums = new Set([...latestDraw.main, latestDraw.addl]);
-
-    // Check if exact 6-number combination exists in all history
-    let comboFoundDate = '';
+  function findComboFoundDate(picks, draws, maxPick) {
+    // picks: sorted
     if (picks.length === 6) {
-      const key = picks.join('-');
-      for (const draw of draws) {
-        if (draw.main.join('-') === key) {
-          comboFoundDate = draw.date;
-          break;
-        }
+      for (const d of draws) {
+        if (same6(picks, d.main)) return d.date;
       }
-    } else if (picks.length === 7) {
+      return "";
+    }
+    // 7-pick only used for SG; check all 6-subsets
+    if (picks.length === 7 && maxPick === 7) {
       for (let skip = 0; skip < 7; skip++) {
-        const six = picks.filter((_, i) => i !== skip).sort((a,b) => a - b);
-        const key = six.join('-');
-        for (const draw of draws) {
-          if (draw.main.join('-') === key) {
-            comboFoundDate = draw.date;
-            break;
-          }
+        const six = picks.filter((_, i) => i !== skip).slice().sort((a,b)=>a-b);
+        for (const d of draws) {
+          if (same6(six, d.main)) return d.date;
         }
-        if (comboFoundDate) break;
       }
     }
-
-    // Numbers that appeared in previous draw
-    const inPrevDraw = picks.filter(n => prevDrawNums.has(n));
-
-    return { prevDrawNums, inPrevDraw, comboFoundDate };
+    return "";
   }
 
-  function renderResults(picks, result) {
-    let html = '';
+  function buildLatestRow(draws) {
+    if (!draws || draws.length === 0) return { date: "—", balls: [], comboFoundDate: "" };
+    const latest = draws[0];
+    const latestKey = latest.main.join("-");
+    let found = "";
+    for (let i = 1; i < draws.length; i++) {
+      if (draws[i].main.join("-") === latestKey) { found = draws[i].date; break; }
+    }
+    return { date: latest.date, balls: [...latest.main, latest.addl], comboFoundDate: found };
+  }
 
-    html += '<div class="result-block">';
-    html += '<div class="result-block-title">Numbers in Previous Draw</div>';
-    html += '<div class="result-block-body">';
-    const parts = picks.map(n => {
-      if (result.prevDrawNums.has(n)) return `<span class="hit">${n} ✓</span>`;
-      return `<span class="miss">${n} ✗</span>`;
+  function renderLatest(latest, prevSet) {
+    const dateEl = document.getElementById("latest-date");
+    const foundEl = document.getElementById("latest-found");
+    const ballsWrap = document.getElementById("latest-balls");
+    if (!dateEl || !foundEl || !ballsWrap) return;
+
+    dateEl.textContent = latest.date;
+
+    if (latest.comboFoundDate) {
+      foundEl.textContent = `Found on ${latest.comboFoundDate}`;
+      foundEl.className = "found-date";
+    } else {
+      foundEl.textContent = "Not Found";
+      foundEl.className = "not-found";
+    }
+
+    ballsWrap.innerHTML = "";
+    latest.balls.forEach((n, idx) => {
+      const s = document.createElement("span");
+      s.className = "combo-ball";
+      if (prevSet && prevSet.has(n)) s.classList.add("hit-prev");
+      if (latest.comboFoundDate) s.classList.add("combo-found");
+      // show addl as +X
+      if (idx === 6) s.textContent = `+${n}`;
+      else s.textContent = String(n);
+      ballsWrap.appendChild(s);
     });
-    html += parts.join(' &nbsp; ');
-    html += `<br><small>${result.inPrevDraw.length} of ${picks.length} appeared in previous draw</small>`;
-    html += '</div></div>';
-
-    html += '<div class="result-block">';
-    html += '<div class="result-block-title">Combination in History</div>';
-    html += '<div class="result-block-body">';
-    if (result.comboFoundDate) {
-      html += `<span class="hit">✓ Found on ${result.comboFoundDate}</span>`;
-    } else {
-      html += '✗ This exact combination has not occurred.';
-    }
-    html += '</div></div>';
-
-    resultsDiv.innerHTML = html;
-    resultsDiv.style.display = 'block';
   }
 
-  function createComboRow(entry) {
-    // Guard against malformed entries
-    if (!entry || !entry.searchDate || !Array.isArray(entry.numbers)) {
-      return document.createElement('div');
+  function loadHistory(gameKey) {
+    const k = storageKeyForGame(gameKey);
+    try {
+      const r = localStorage.getItem(k);
+      if (!r) return [];
+      const parsed = JSON.parse(r);
+      return parsed.filter(e => e && e.searchDate && Array.isArray(e.numbers) && e.numbers.length >= 6);
+    } catch (e) { return []; }
+  }
+  function saveHistory(gameKey, h) {
+    const k = storageKeyForGame(gameKey);
+    try { localStorage.setItem(k, JSON.stringify(h)); } catch (e) {}
+  }
+  function clearHistory(gameKey) {
+    const k = storageKeyForGame(gameKey);
+    try { localStorage.removeItem(k); } catch (e) {}
+  }
+
+  function initForGame(draws) {
+    const gKey = currentGameKey();
+    const g = currentGame();
+
+    const MIN_PICK = g.minPick;
+    const MAX_PICK = g.maxPick;
+    const NUM_MAX = g.maxNum;
+
+    const selected = new Set();
+
+    const grid = document.getElementById("ball-grid");
+    const display = document.getElementById("selected-display");
+    const checkBtn = document.getElementById("lookup-btn");
+    const clearBtn = document.getElementById("clear-btn");
+    const resultsDiv = document.getElementById("check-results");
+    const historyDiv = document.getElementById("search-history");
+    const clearHistBtn = document.getElementById("clear-history-btn");
+
+    if (!grid || !display || !checkBtn || !clearBtn || !resultsDiv || !historyDiv || !clearHistBtn) return;
+
+    // Build grid 1..NUM_MAX
+    grid.innerHTML = "";
+    for (let n = 1; n <= NUM_MAX; n++) {
+      const d = document.createElement("div");
+      d.className = "ball";
+      d.dataset.num = String(n);
+      d.textContent = String(n);
+      grid.appendChild(d);
     }
 
-    const container = document.createElement('div');
-    container.className = 'history-entry';
+    const balls = () => grid.querySelectorAll(".ball");
 
-    const row = document.createElement('div');
-    row.className = 'combo-row';
+    function updateUI() {
+      const count = selected.size;
+      balls().forEach(b => {
+        const num = parseInt(b.dataset.num, 10);
+        if (selected.has(num)) {
+          b.classList.add("selected");
+          b.classList.remove("disabled");
+        } else {
+          b.classList.remove("selected");
+          if (count >= MAX_PICK) b.classList.add("disabled");
+          else b.classList.remove("disabled");
+        }
+      });
 
-    // Dates column
-    const dates = document.createElement('div');
-    dates.className = 'combo-dates';
-
-    const searchDateEl = document.createElement('span');
-    searchDateEl.className = 'search-date';
-    searchDateEl.textContent = entry.searchDate;
-    dates.appendChild(searchDateEl);
-
-    if (entry.comboFoundDate) {
-      const foundDateEl = document.createElement('span');
-      foundDateEl.className = 'found-date';
-      foundDateEl.textContent = entry.comboFoundDate;
-      dates.appendChild(foundDateEl);
-    } else {
-      const notFoundEl = document.createElement('span');
-      notFoundEl.className = 'not-found';
-      notFoundEl.textContent = 'Not Found';
-      dates.appendChild(notFoundEl);
-    }
-
-    row.appendChild(dates);
-
-    // Balls
-    const ballsDiv = document.createElement('div');
-    ballsDiv.className = 'combo-balls';
-
-    const prevSet = new Set(entry.inPrevDraw || []);
-
-    for (const n of entry.numbers) {
-      const ball = document.createElement('span');
-      ball.className = 'combo-ball';
-      if (prevSet.has(n)) {
-        ball.classList.add('hit-prev');
+      if (count === 0) {
+        display.textContent = "Selected: none";
+      } else {
+        const sorted = [...selected].sort((a,b)=>a-b);
+        const remaining = MIN_PICK - count;
+        let hint = "";
+        if (remaining > 0) hint = ` (pick ${remaining} more)`;
+        else if (count < MAX_PICK) hint = " (or pick 1 more)";
+        display.textContent = "Selected: " + sorted.join(", ") + hint;
       }
+      checkBtn.disabled = count < MIN_PICK;
+    }
+
+    function runChecks(picks) {
+      const latestDraw = draws[0];
+      const prevDrawNums = new Set(latestDraw ? [...latestDraw.main, latestDraw.addl] : []);
+      const inPrevDraw = picks.filter(n => prevDrawNums.has(n));
+      const comboFoundDate = findComboFoundDate(picks, draws, MAX_PICK);
+      return { prevDrawNums, inPrevDraw, comboFoundDate };
+    }
+
+    function renderResults(picks, result) {
+      let html = "";
+
+      html += '<div class="result-block">';
+      html += '<div class="result-block-title">Numbers in Previous Draw</div>';
+      html += '<div class="result-block-body">';
+      const parts = picks.map(n => result.prevDrawNums.has(n) ? `<span class="hit">${n} ✓</span>` : `<span class="miss">${n} ✗</span>`);
+      html += parts.join(" &nbsp; ");
+      html += `<br><small>${result.inPrevDraw.length} of ${picks.length} appeared in previous draw</small>`;
+      html += "</div></div>";
+
+      html += '<div class="result-block">';
+      html += '<div class="result-block-title">Combination in History</div>';
+      html += '<div class="result-block-body">';
+      html += result.comboFoundDate ? `<span class="hit">✓ Found on ${result.comboFoundDate}</span>` : "✗ This exact combination has not occurred.";
+      html += "</div></div>";
+
+      resultsDiv.innerHTML = html;
+      resultsDiv.style.display = "block";
+    }
+
+    function createComboRow(entry) {
+      const container = document.createElement("div");
+      container.className = "history-entry";
+
+      const row = document.createElement("div");
+      row.className = "combo-row";
+
+      const dates = document.createElement("div");
+      dates.className = "combo-dates";
+
+      const searchDateEl = document.createElement("span");
+      searchDateEl.className = "search-date";
+      searchDateEl.textContent = entry.searchDate;
+      dates.appendChild(searchDateEl);
+
+      const foundEl = document.createElement("span");
       if (entry.comboFoundDate) {
-        ball.classList.add('combo-found');
+        foundEl.className = "found-date";
+        foundEl.textContent = entry.comboFoundDate;
+      } else {
+        foundEl.className = "not-found";
+        foundEl.textContent = "Not Found";
       }
-      ball.textContent = n;
-      ballsDiv.appendChild(ball);
+      dates.appendChild(foundEl);
+
+      row.appendChild(dates);
+
+      const ballsDiv = document.createElement("div");
+      ballsDiv.className = "combo-balls";
+
+      const prevSet = new Set(entry.inPrevDraw || []);
+      for (const n of entry.numbers) {
+        const ball = document.createElement("span");
+        ball.className = "combo-ball";
+        if (prevSet.has(n)) ball.classList.add("hit-prev");
+        if (entry.comboFoundDate) ball.classList.add("combo-found");
+        ball.textContent = String(n);
+        ballsDiv.appendChild(ball);
+      }
+
+      // pad to MAX_PICK for consistent width
+      for (let i = entry.numbers.length; i < MAX_PICK; i++) {
+        const empty = document.createElement("span");
+        empty.className = "combo-ball empty";
+        ballsDiv.appendChild(empty);
+      }
+
+      row.appendChild(ballsDiv);
+      container.appendChild(row);
+
+      container.addEventListener("click", () => {
+        selected.clear();
+        for (const n of entry.numbers) selected.add(n);
+        updateUI();
+      });
+
+      return container;
     }
 
-    // Pad empty slots to 7
-    for (let i = entry.numbers.length; i < 7; i++) {
-      const empty = document.createElement('span');
-      empty.className = 'combo-ball empty';
-      ballsDiv.appendChild(empty);
+    function renderHistory() {
+      const history = loadHistory(gKey);
+      historyDiv.innerHTML = "";
+      if (history.length === 0) { clearHistBtn.style.display = "none"; return; }
+      clearHistBtn.style.display = "";
+      for (const entry of history) historyDiv.appendChild(createComboRow(entry));
     }
 
-    row.appendChild(ballsDiv);
-    container.appendChild(row);
+    // latest row
+    const prev = draws[1];
+    const prevSet = new Set(prev ? [...prev.main, prev.addl] : []);
+    const latest = buildLatestRow(draws);
+    renderLatest(latest, prevSet);
 
-    container.addEventListener('click', () => {
-      selected.clear();
-      for (const n of entry.numbers) selected.add(n);
+    // events
+    grid.onclick = (e) => {
+      const ball = e.target.closest(".ball");
+      if (!ball) return;
+      const num = parseInt(ball.dataset.num, 10);
+      if (selected.has(num)) selected.delete(num);
+      else if (selected.size < MAX_PICK) selected.add(num);
       updateUI();
-    });
+    };
 
-    return container;
-  }
+    clearBtn.onclick = () => { selected.clear(); updateUI(); resultsDiv.style.display = "none"; };
+    clearHistBtn.onclick = () => { clearHistory(gKey); renderHistory(); };
 
-  function renderHistory() {
-    const history = loadHistory();
-    historyDiv.innerHTML = '';
-    if (history.length === 0) { clearHistBtn.style.display = 'none'; return; }
-    clearHistBtn.style.display = '';
-    for (const entry of history) {
-      historyDiv.appendChild(createComboRow(entry));
-    }
-  }
-
-  try {
-    const res = await fetch(csvUrl, { cache: 'no-store' });
-    const txt = await res.text();
-    const draws = parseCSV(txt);
-
-    // Apply combo-found styling to latest draw row if applicable
-    const latestRow = document.getElementById('latest-draw-row');
-    if (latestRow) {
-      const foundDateEl = latestRow.querySelector('.found-date');
-      if (foundDateEl) {
-        latestRow.querySelectorAll('.combo-ball:not(.empty)').forEach(b => {
-          b.classList.add('combo-found');
-        });
-      }
-    }
-
-    renderHistory();
-
-    checkBtn.addEventListener('click', () => {
-      const picked = [...selected].sort((a, b) => a - b);
-      const result = runChecks(picked, draws);
-
+    checkBtn.onclick = () => {
+      const picked = [...selected].sort((a,b)=>a-b);
+      const result = runChecks(picked);
       renderResults(picked, result);
 
-      const now = new Date();
-      const searchDate = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-
       const entry = {
-        searchDate,
+        searchDate: ymdNow(),
         numbers: picked,
         inPrevDraw: result.inPrevDraw,
         comboFoundDate: result.comboFoundDate
       };
 
-      const history = loadHistory();
+      const history = loadHistory(gKey);
       history.unshift(entry);
       if (history.length > MAX_HISTORY) history.pop();
-      saveHistory(history);
+      saveHistory(gKey, history);
       renderHistory();
-    });
-  } catch (e) {
-    historyDiv.textContent = 'Failed to load data. Try refreshing.';
+    };
+
+    updateUI();
+    renderHistory();
   }
+
+  async function loadAndRender() {
+    const g = currentGame();
+    try {
+      const res = await fetch(g.csv, { cache: "no-store" });
+      const txt = await res.text();
+      const draws = parseCSV(txt);
+      initForGame(draws);
+    } catch (e) {
+      const historyDiv = document.getElementById("search-history");
+      if (historyDiv) historyDiv.textContent = "Failed to load data. Try refreshing.";
+    }
+  }
+
+  window.addEventListener("lotto:gamechange", () => loadAndRender());
+  window.addEventListener("DOMContentLoaded", () => loadAndRender());
 })();

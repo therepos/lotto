@@ -6,9 +6,13 @@
   const HIGH_COLOR   = '#1e3a8a';
   const HIGHLIGHT_BG = '#fffde7';
 
-  const csvUrl = 'data/sgtoto.csv';
-  const NUM_MIN = 1;
-  const NUM_MAX = 49;
+  function currentGameKey() {
+    return (window.LOTTO_STATE && window.LOTTO_STATE.game) ? window.LOTTO_STATE.game : "sgtoto";
+  }
+  function currentGame() {
+    const key = currentGameKey();
+    return (window.LOTTO_GAMES && window.LOTTO_GAMES[key]) ? window.LOTTO_GAMES[key] : window.LOTTO_GAMES.sgtoto;
+  }
 
   function parseCSV(text) {
     const lines = text.trim().split('\n');
@@ -62,7 +66,7 @@
     return `rgb(${Math.round(lo[0]+(hi[0]-lo[0])*t)},${Math.round(lo[1]+(hi[1]-lo[1])*t)},${Math.round(lo[2]+(hi[2]-lo[2])*t)})`;
   }
 
-  function renderDraw(draws, thead, tbody) {
+  function renderDraw(draws, thead, tbody, NUM_MIN, NUM_MAX) {
     let hrow = '<tr><th class="row-header">Date</th>';
     for (let n = NUM_MIN; n <= NUM_MAX; n++) hrow += `<th>${n}</th>`;
     hrow += '</tr>';
@@ -86,7 +90,7 @@
     tbody.innerHTML = html;
   }
 
-  function renderGrouped(groups, thead, tbody, tooltip) {
+  function renderGrouped(groups, thead, tbody, tooltip, NUM_MIN, NUM_MAX) {
     let maxCount = 1;
     for (const g of groups)
       for (let n = NUM_MIN; n <= NUM_MAX; n++) {
@@ -118,26 +122,24 @@
     }
     tbody.innerHTML = html;
 
-    tbody.addEventListener('mouseover', e => {
+    tbody.onmouseover = (e) => {
       const el = e.target.closest('.heat-cell');
       if (!el || !el.dataset.tip) { tooltip.style.display = 'none'; return; }
       tooltip.textContent = el.dataset.tip;
       tooltip.style.display = 'block';
-    });
-    tbody.addEventListener('mousemove', e => {
+    };
+    tbody.onmousemove = (e) => {
       tooltip.style.left = (e.clientX+12)+'px';
       tooltip.style.top = (e.clientY-30)+'px';
-    });
-    tbody.addEventListener('mouseout', e => {
+    };
+    tbody.onmouseout = (e) => {
       if (!e.target.closest('.heat-cell')) tooltip.style.display = 'none';
-    });
+    };
   }
 
-  // === Excel download ===
-  function buildExcelData(draws, currentMode) {
+  function buildExcelData(draws, currentMode, NUM_MIN, NUM_MAX) {
     const rows = [];
     if (currentMode === 'draw') {
-      // Header
       const header = ['Date'];
       for (let n = NUM_MIN; n <= NUM_MAX; n++) header.push(n);
       rows.push(header);
@@ -168,8 +170,7 @@
     return rows;
   }
 
-  async function downloadExcel(draws, currentMode) {
-    // Load SheetJS dynamically
+  async function downloadExcel(draws, currentMode, NUM_MIN, NUM_MAX) {
     if (!window.XLSX) {
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
@@ -180,61 +181,71 @@
       });
     }
 
-    const data = buildExcelData(draws, currentMode);
+    const data = buildExcelData(draws, currentMode, NUM_MIN, NUM_MAX);
     const ws = XLSX.utils.aoa_to_sheet(data);
 
-    // Column widths: first col wider, rest narrow
     const cols = [{ wch: 14 }];
     for (let n = NUM_MIN; n <= NUM_MAX; n++) cols.push({ wch: 4 });
     ws['!cols'] = cols;
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Distribution');
-    XLSX.writeFile(wb, `distribution_${currentMode}.xlsx`);
+    XLSX.writeFile(wb, `distribution_${currentGameKey()}_${currentMode}.xlsx`);
   }
 
-  // Main
-  try {
-    const res = await fetch(csvUrl, { cache: 'no-store' });
-    const txt = await res.text();
-    const draws = parseCSV(txt);
+  async function loadAndRender() {
+    const g = currentGame();
+    const csvUrl = g.csv;
+    const NUM_MIN = 1;
+    const NUM_MAX = g.maxNum;
 
-    const thead = document.querySelector('#dist-table thead');
-    const tooltip = document.getElementById('dist-tooltip');
-    const modeButtons = document.querySelectorAll('#dist-controls button');
-    const downloadBtn = document.getElementById('dist-download-btn');
+    try {
+      const res = await fetch(csvUrl, { cache: 'no-store' });
+      const txt = await res.text();
+      const draws = parseCSV(txt);
 
-    let currentMode = 'draw';
+      const thead = document.querySelector('#dist-table thead');
+      const tooltip = document.getElementById('dist-tooltip');
+      const modeButtons = document.querySelectorAll('#dist-controls button');
+      const downloadBtn = document.getElementById('dist-download-btn');
 
-    function render() {
-      tooltip.style.display = 'none';
-      const oldTbody = document.querySelector('#dist-table tbody');
-      const newTbody = oldTbody.cloneNode(false);
-      oldTbody.parentNode.replaceChild(newTbody, oldTbody);
-      const tb = document.querySelector('#dist-table tbody');
+      let currentMode = 'draw';
 
-      if (currentMode === 'draw') renderDraw(draws, thead, tb);
-      else if (currentMode === 'week') renderGrouped(groupDraws(draws, weekKey), thead, tb, tooltip);
-      else renderGrouped(groupDraws(draws, monthKey), thead, tb, tooltip);
-    }
+      function render() {
+        tooltip.style.display = 'none';
+        const oldTbody = document.querySelector('#dist-table tbody');
+        const newTbody = oldTbody.cloneNode(false);
+        oldTbody.parentNode.replaceChild(newTbody, oldTbody);
+        const tb = document.querySelector('#dist-table tbody');
 
-    modeButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        modeButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentMode = btn.dataset.mode;
-        render();
+        if (currentMode === 'draw') renderDraw(draws, thead, tb, NUM_MIN, NUM_MAX);
+        else if (currentMode === 'week') renderGrouped(groupDraws(draws, weekKey), thead, tb, tooltip, NUM_MIN, NUM_MAX);
+        else renderGrouped(groupDraws(draws, monthKey), thead, tb, tooltip, NUM_MIN, NUM_MAX);
+      }
+
+      modeButtons.forEach(btn => {
+        btn.onclick = () => {
+          modeButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentMode = btn.dataset.mode;
+          render();
+        };
       });
-    });
 
-    downloadBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      downloadExcel(draws, currentMode);
-    });
+      if (downloadBtn) {
+        downloadBtn.onclick = (e) => {
+          e.preventDefault();
+          downloadExcel(draws, currentMode, NUM_MIN, NUM_MAX);
+        };
+      }
 
-    render();
-  } catch (e) {
-    document.getElementById('dist-table-wrap').textContent =
-      'Failed to load distribution data. Try refreshing.';
+      render();
+    } catch (e) {
+      const wrap = document.getElementById('dist-table-wrap');
+      if (wrap) wrap.textContent = 'Failed to load distribution data. Try refreshing.';
+    }
   }
+
+  window.addEventListener("lotto:gamechange", () => loadAndRender());
+  loadAndRender();
 })();
