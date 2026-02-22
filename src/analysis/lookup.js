@@ -15,9 +15,19 @@
   const clearHistBtn = document.getElementById('clear-history-btn');
   const balls = grid.querySelectorAll('.ball');
 
+  // Clear old v1 history
+  try { localStorage.removeItem('lotto-lookup-history'); } catch(e) {}
+
   function loadHistory() {
-    try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : []; }
-    catch (e) { return []; }
+    try {
+      const r = localStorage.getItem(STORAGE_KEY);
+      if (!r) return [];
+      const parsed = JSON.parse(r);
+      // Validate entries — only keep well-formed v2 entries
+      return parsed.filter(e =>
+        e && e.searchDate && Array.isArray(e.numbers) && e.numbers.length >= 6
+      );
+    } catch (e) { return []; }
   }
   function saveHistory(h) {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(h)); } catch (e) {}
@@ -77,22 +87,14 @@
   clearBtn.addEventListener('click', () => { selected.clear(); updateUI(); resultsDiv.style.display = 'none'; });
   clearHistBtn.addEventListener('click', () => { clearHistoryData(); renderHistory(); });
 
-  /**
-   * Check a combination against all draws.
-   * Returns:
-   *   - prevDrawNums: set of numbers from the draw just before the latest
-   *   - comboFoundDate: date string if exact 6-number combo found in history, else ''
-   */
   function runChecks(picks, draws) {
-    const latestDraw = draws[0];
-
     // Numbers from the draw before the latest (the "previous draw")
     const prevDraw = draws.length > 1 ? draws[1] : null;
     const prevDrawNums = prevDraw
       ? new Set([...prevDraw.main, prevDraw.addl])
       : new Set();
 
-    // Check if exact combination exists in all history
+    // Check if exact 6-number combination exists in all history
     let comboFoundDate = '';
     if (picks.length === 6) {
       const key = picks.join('-');
@@ -103,7 +105,6 @@
         }
       }
     } else if (picks.length === 7) {
-      // For 7-number picks, check if any 6-number subset matches
       for (let skip = 0; skip < 7; skip++) {
         const six = picks.filter((_, i) => i !== skip).sort((a,b) => a - b);
         const key = six.join('-');
@@ -126,7 +127,6 @@
   function renderResults(picks, result) {
     let html = '';
 
-    // Numbers in previous draw
     html += '<div class="result-block">';
     html += '<div class="result-block-title">Numbers in Previous Draw</div>';
     html += '<div class="result-block-body">';
@@ -138,7 +138,6 @@
     html += `<br><small>${result.inPrevDraw.length} of ${picks.length} appeared in previous draw</small>`;
     html += '</div></div>';
 
-    // Exact combination
     html += '<div class="result-block">';
     html += '<div class="result-block-title">Combination in History</div>';
     html += '<div class="result-block-body">';
@@ -154,6 +153,11 @@
   }
 
   function createComboRow(entry) {
+    // Guard against malformed entries
+    if (!entry || !entry.searchDate || !Array.isArray(entry.numbers)) {
+      return document.createElement('div');
+    }
+
     const container = document.createElement('div');
     container.className = 'history-entry';
 
@@ -164,21 +168,21 @@
     const dates = document.createElement('div');
     dates.className = 'combo-dates';
 
-    const searchDate = document.createElement('span');
-    searchDate.className = 'search-date';
-    searchDate.textContent = entry.searchDate;
-    dates.appendChild(searchDate);
+    const searchDateEl = document.createElement('span');
+    searchDateEl.className = 'search-date';
+    searchDateEl.textContent = entry.searchDate;
+    dates.appendChild(searchDateEl);
 
     if (entry.comboFoundDate) {
-      const foundDate = document.createElement('span');
-      foundDate.className = 'found-date';
-      foundDate.textContent = entry.comboFoundDate;
-      dates.appendChild(foundDate);
+      const foundDateEl = document.createElement('span');
+      foundDateEl.className = 'found-date';
+      foundDateEl.textContent = entry.comboFoundDate;
+      dates.appendChild(foundDateEl);
     } else {
-      const notFound = document.createElement('span');
-      notFound.className = 'not-found';
-      notFound.textContent = 'Not Found';
-      dates.appendChild(notFound);
+      const notFoundEl = document.createElement('span');
+      notFoundEl.className = 'not-found';
+      notFoundEl.textContent = 'Not Found';
+      dates.appendChild(notFoundEl);
     }
 
     row.appendChild(dates);
@@ -212,7 +216,6 @@
     row.appendChild(ballsDiv);
     container.appendChild(row);
 
-    // Click to reload numbers
     container.addEventListener('click', () => {
       selected.clear();
       for (const n of entry.numbers) selected.add(n);
@@ -237,12 +240,11 @@
     const txt = await res.text();
     const draws = parseCSV(txt);
 
-    // Also apply combo-found styling to latest draw row if applicable
+    // Apply combo-found styling to latest draw row if applicable
     const latestRow = document.getElementById('latest-draw-row');
     if (latestRow) {
       const foundDateEl = latestRow.querySelector('.found-date');
       if (foundDateEl) {
-        // Combination was found — bold outline all balls
         latestRow.querySelectorAll('.combo-ball:not(.empty)').forEach(b => {
           b.classList.add('combo-found');
         });
