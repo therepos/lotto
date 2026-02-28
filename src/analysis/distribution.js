@@ -34,13 +34,14 @@
     const lines = text.trim().split('\n');
     lines.shift();
     return lines.map(line => {
-      const cols = line.split(',');
+      const cols = line.replace(/\r$/, '').split(',');
+      const addl = parseInt(cols[7], 10);
       return {
-        date: cols[0].trim(),
+        date: normalizeDate(cols[0].trim()),
         main: [1, 2, 3, 4, 5, 6].map(i => parseInt(cols[i], 10)),
-        addl: parseInt(cols[7], 10)
+        addl: isNaN(addl) ? null : addl
       };
-    }).filter(r => r.main.every(n => !isNaN(n)) && !isNaN(r.addl));
+    }).filter(r => r.main.every(n => !isNaN(n)));
   }
 
   function weekKey(dateStr) {
@@ -69,7 +70,7 @@
       const sv = dateSortVal(draw.date);
       if (sv > g.sortVal) g.sortVal = sv;
       for (const n of draw.main) g.main[n] = (g.main[n] || 0) + 1;
-      g.addl[draw.addl] = (g.addl[draw.addl] || 0) + 1;
+      if (draw.addl != null) g.addl[draw.addl] = (g.addl[draw.addl] || 0) + 1;
     }
     return [...groups.values()].sort((a, b) => b.sortVal - a.sortVal);
   }
@@ -95,7 +96,7 @@
       html += `<tr${cls}><td class="row-label">${draw.date}</td>`;
       for (let n = NUM_MIN; n <= NUM_MAX; n++) {
         const isMain = draw.main.includes(n);
-        const isAddl = draw.addl === n;
+        const isAddl = draw.addl != null && draw.addl === n;
         const bg = i === 0 ? HIGHLIGHT_BG : EMPTY_COLOR;
         if (isMain) html += `<td style="background:${bg}"><span class="dot" style="background:${MAIN_COLOR}"></span></td>`;
         else if (isAddl) html += `<td style="background:${bg}"><span class="dot" style="background:${ADDL_COLOR}"></span></td>`;
@@ -163,7 +164,7 @@
         const row = [draw.date];
         for (let n = NUM_MIN; n <= NUM_MAX; n++) {
           if (draw.main.includes(n)) row.push('M');
-          else if (draw.addl === n) row.push('A');
+          else if (draw.addl != null && draw.addl === n) row.push('A');
           else row.push('');
         }
         rows.push(row);
