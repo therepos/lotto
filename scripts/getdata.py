@@ -1,7 +1,17 @@
 import os
+import sys
+import time
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+
+HEADERS = {
+    "User-Agent": "lotto-data-fetch/1.0 (+https://github.com/therepos/lotto)",
+    "Accept": "text/html,application/xhtml+xml",
+    "Accept-Language": "en",
+}
+RETRIES = 4
+BACKOFF = 5  # seconds, doubled on each retry
 
 COLUMNS = ["Date", "Num1", "Num2", "Num3", "Num4", "Num5", "Num6", "Addl"]
 
@@ -40,13 +50,28 @@ def load_existing(path: str) -> pd.DataFrame:
     return pd.DataFrame(columns=COLUMNS)
 
 
+def fetch(url: str) -> requests.Response:
+    last_err = None
+    for attempt in range(1, RETRIES + 1):
+        try:
+            resp = requests.get(url, headers=HEADERS, timeout=30)
+            resp.raise_for_status()
+            return resp
+        except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as e:
+            last_err = e
+            if attempt < RETRIES:
+                wait = BACKOFF * (2 ** (attempt - 1))
+                print(f"  fetch failed ({e}); retry {attempt}/{RETRIES - 1} in {wait}s")
+                time.sleep(wait)
+    raise last_err
+
+
 def scrape_one(url: str, existing_df: pd.DataFrame) -> list[list]:
     latest_date = None
     if not existing_df.empty and "Date" in existing_df.columns:
         latest_date = str(existing_df.iloc[0]["Date"]).strip()
 
-    resp = requests.get(url, timeout=30)
-    resp.raise_for_status()
+    resp = fetch(url)
     soup = BeautifulSoup(resp.text, "html.parser")
 
     table = soup.find("table")
@@ -97,5 +122,13 @@ def update_source(src: dict) -> None:
 
 
 if __name__ == "__main__":
+    failed = []
     for src in SOURCES:
-        update_source(src)
+        try:
+            update_source(src)
+        except Exception as e:  # keep going; a dead source must not block publishing
+            print(f"[{src['name']}] FAILED: {e}")
+            failed.append(src["name"])
+    if failed:
+        print(f"Sources not updated: {', '.join(failed)}")
+        sys.exit(2)

@@ -44,6 +44,8 @@ jobs:
           pip install pandas requests beautifulsoup4 markdown
 
       - name: Fetch data
+        id: fetch
+        continue-on-error: true  # site still deploys from existing data if a source is down
         run: python scripts/getdata.py
 
       - name: Build site into _site/
@@ -72,3 +74,7 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Report fetch failure
+        if: steps.fetch.outcome == 'failure'
+        run: echo "::warning::Data fetch failed for one or more sources; deployed with existing data."
